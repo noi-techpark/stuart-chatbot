@@ -37,10 +37,10 @@ def find_word_boundary(body: str, pos: int, direction: int) -> int:
 
 def chunk_text(body: str, chunk_len: int, overlap_len: int, hard_limit: int) -> List[Dict[str, int]]:
     if chunk_len < 1 or overlap_len < 0 or hard_limit < 1:
-        print("ERROR: chunk_text(): inconsistent arguments")
+        print("ERROR: chunk_text(): inconsistent arguments.")
         sys.exit(1)
     if chunk_len + overlap_len > hard_limit or overlap_len > chunk_len:
-        print("ERROR: chunk_text(): inconsistent arguments relative to each other")
+        print("ERROR: chunk_text(): inconsistent arguments relative to each other.")
         sys.exit(1)
     # find ideal chunk limit positions
     chunks = []
@@ -76,7 +76,7 @@ def chunk_text(body: str, chunk_len: int, overlap_len: int, hard_limit: int) -> 
             pos["end"] = end_w
         # consistency check
         if pos["end"] - pos["start"] > hard_limit:
-            print("ERROR: chunk_text(): consistency check 1 failed")
+            print("ERROR: chunk_text(): consistency check 1 failed.")
             sys.exit(1)
     # avoid the last chunk just being a subset of the one but last chunk
     if len(chunks) >= 2:
@@ -84,7 +84,7 @@ def chunk_text(body: str, chunk_len: int, overlap_len: int, hard_limit: int) -> 
             chunks.pop()
         # consistency check
         if chunks[-1]["end"] != len(body):
-            print("ERROR: chunk_text(): consistency check 2 failed")
+            print("ERROR: chunk_text(): consistency check 2 failed.")
             sys.exit(1)
 
     return chunks
@@ -105,7 +105,7 @@ def rag_dir(dirname: str, tag: str,
         files = os.listdir(dirname)
         files.sort()
     except FileNotFoundError:
-        print("ERROR: rag_dir(): cannot open directory '%s'" % dirname)
+        print("ERROR: rag_dir(): cannot open directory '%s'." % dirname)
         sys.exit(1)
     known_extensions = [".txt", ".md"]
 
@@ -191,13 +191,16 @@ def rag_dir(dirname: str, tag: str,
           (num_files_new, (num_files_old + num_files_new), num_chunks, t1_chunk, t1_model_load, t1_embed, t1_store))
 
 
-def query(cursor: psycopg2.extras.DictCursor, query_str: str) -> List[Dict[str, any]]:
+def search(cursor: psycopg2.extras.DictCursor, top: int, query_str: str) -> List[Dict[str, any]]:
     model = get_embedding_model()
     embedding = model.encode(query_str)
+    # when searching, note that we add a small penalty for chunks with tag 'rt'
     res = select_all(cursor,
                      """
-                     select tag, file_name, start_pos, file_body, embedding <=> %s::vector as distance from ragdata
-                     order by distance asc limit 5
+                     select tag, file_name, start_pos, file_body,
+                            (embedding <=> %s::vector) + case when tag = 'rt' then 0.1 else 0.0 end as distance
+                     from ragdata
+                     order by distance asc limit %s
                      """,
-                     [embedding.tolist()])
+                     [embedding.tolist(), top])
     return res
