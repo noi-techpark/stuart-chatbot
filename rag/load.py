@@ -11,12 +11,12 @@
 #       - ticket transactions are immutable, so that is not a problem as
 #         the script will just add the new transactions
 #       - readmes and wiki entries might change, so they should be deleted
-#         periodically from the table, so the script can reRAG them):
+#         periodically from the table, so the script can reRAG them:
 #         delete from ragdata where tag in ('readme', 'wiki');
 # ------------------------------------------------------------------------------
 
 from librag import *
 
-rag_dir("../data_readme", tag="readme", chunk_len=1000, overlap_len=250, hard_limit=1500)
-rag_dir("../data_wiki",   tag="wiki",   chunk_len=1000, overlap_len=250, hard_limit=1500)
+rag_dir("../data_readme", tag="readme", chunk_len=2000, overlap_len=250, hard_limit=2500)
+rag_dir("../data_wiki",   tag="wiki",   chunk_len=2000, overlap_len=250, hard_limit=2500)
 rag_dir("../data_rt",     tag="rt",     chunk_len=1000, overlap_len=250, hard_limit=1500)
