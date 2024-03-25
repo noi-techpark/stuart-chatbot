@@ -4,3 +4,4 @@ data_rt/*.md
 data_rt/*.txt
 data_wiki/*.md
 data_wiki/*.txt
+.venv
