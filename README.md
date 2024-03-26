@@ -2,6 +2,20 @@
 
 (**S**uper **T**alkative **U**nderstanding **A**rtificial **R**esponse **T**echnology)
 
+<!-- TOC -->
+* [Stuart 🛎](#stuart-)
+  * [Background](#background)
+  * [Installation](#installation)
+    * [Stuart](#stuart)
+    * [PostgreSQL](#postgresql)
+  * [Preparing the Data](#preparing-the-data)
+    * [Scraping the Documents](#scraping-the-documents)
+    * [RAGging  the Documents](#ragging--the-documents)
+  * [Running the Chatbot](#running-the-chatbot)
+  * [A Note about the Models used](#a-note-about-the-models-used)
+  * [A Note about Performance](#a-note-about-performance)
+<!-- TOC -->
+
 ```text
 Stuart: You rang 🛎️ ?
 Ask me anything or enter 'q' to exit. Enter 'r' to restart our conversation.
@@ -79,7 +93,7 @@ user:
 
 ```text
 cd ~
-git clone https://github.com/puVFwqbwdb-github/stuart-chatbot
+git clone https://github.com/noi-techpark/stuart-chatbot
 cd stuart-chatbot
 python3 -m venv .venv
 source .venv/bin/activate
@@ -138,9 +152,9 @@ vim rag/secrets_pg.json
 
 Ready!
 
-## Preparing the data
+## Preparing the Data
 
-### Scraping the documents
+### Scraping the Documents
 
 Before the chatbot can be used for the first time, we need to scrape the documents:
 
@@ -174,7 +188,7 @@ new transactions.
 > The easiest way to run all these scripts is to set up a cronjob that runs
 > `cron/cron-scrape.sh` that will take care of everything.
 
-### RAGging  the documents
+### RAGging  the Documents
 
 Before the chatbot can be used for the first time, we also need to "RAG" the documents.
 RAGging means:
@@ -208,7 +222,7 @@ with `delete from ragdata where tag in ('readme', 'wiki');`.
 
 > Again, there is a handy script that can be called from **crontab**: `cron/cron-load.sh`.
 
-## Running the chatbot
+## Running the Chatbot
 
 Currently, the chatbot is available as an interactive command line interface only.
 
@@ -288,7 +302,7 @@ So the extra size of Mixtral might not be worth it.
 
 The model is instantiated in `rag/query.py`.
 
-## A Note about performance
+## A Note about Performance
 
 Stuart requires 16 GB of RAM. 
 
