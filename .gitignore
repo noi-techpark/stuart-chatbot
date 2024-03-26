@@ -1,0 +1,7 @@
+data_readme/*.md
+data_readme/*.txt
+data_rt/*.md
+data_rt/*.txt
+data_wiki/*.md
+data_wiki/*.txt
+.venv
