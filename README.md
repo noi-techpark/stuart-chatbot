@@ -28,6 +28,7 @@ Ask me anything or enter 'q' to exit. Enter 'r' to restart our conversation.
 
 **Changelog of this document**
 
+2024-03-27 added note about llama-cpp-python compile options  
 2024-03-25 first release - Chris Mair <chris@1006.org>
 
 ## Background
@@ -268,7 +269,7 @@ Let's break down the components.
 6. Now the LLMs answer plus the new question is again embedded and searched for (leading
    to the same document found as best match).
 
-7. A new prompt is built using the follow up question and the same chunk and input again to the LLM.
+7. A new prompt is built using the follow-up question and the same chunk and input again to the LLM.
 
 8. The LLMs answers with the information. "5228229451CA11D18F1400A02427D15E" is indeed correct.
 
@@ -304,16 +305,47 @@ The model is instantiated in `rag/query.py`.
 
 ## A Note about Performance
 
-Stuart requires 16 GB of RAM. 
+Stuart requires at least 16 GB of RAM. 
 
-A single CPU core is enough to run it, but answers take 1-5 minutes with a single core.
+A single CPU core is enough to run it, but answers take 1-5 minutes with a single core. More
+cores improve the performance up to a point where LLM inference becomes memory-bandwidth-bound.
 
-llama-cpp-python (based on llama-cpp) scales well with CPU cores, but beyond ~ 4 cores, memory
-bandwidth starts to be more and more important. When scaling up che CPU core count check whether
-the additional CPU cores are not starved by insufficient memory bandwidth.
+When scaling up che core count, for example using a cloud-based VM, check whether the additional
+cores are not starved by insufficient memory bandwidth. This typically starts to happen between
+4 and 16 cores, depending on per floating point performance and memory bandwidth.
 
-GPUs can be used as well. llama-cpp-python supports the M-Series chips in the Mac out of the box
-and can be compiled to use GPUs on Linux as 
-well (see [llama-cpp-python supported backends](https://github.com/abetlen/llama-cpp-python?tab=readme-ov-file#supported-backends)).
-Typically, response times go down to a few to ten seconds when a GPU is used.
+When the `llama-cpp-python` package is installed, the underlying inference code (`llama-cpp`) is compiled
+for the effective hardware using a number of default settings. One of those settings indicates
+the maximum number of threads to use: the default is to use half the number of logical cores, so to match
+the number of physical cores.
+
+VMs in the cloud normally expose logical cores, but the underlying host might match all logical cores present
+in the VM to physical cores on the host system. So the default of using a number of threads equal to only
+half the number of logical cores leaves some performance on the table.
+
+We've found that for VMs with a small number of logical cores ("vCPU"), such as 2, performance can be improved
+by compiling `llama-cpp` to use the OpenBLAS backend which spawns as many threads as there are logical cores.
+
+It's very easy to change an existing installation of Stuart to make use of this.
+You need to install additional packages first (on Debian: `libopenblas-dev` and `pkg-config`) and force a
+re-installation of `llama-cpp-python`:
+
+```text
+cd ~/stuart-chatbot/
+source .venv/bin/activate
+CMAKE_ARGS="-DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS" pip install --force-reinstall --no-cache-dir llama-cpp-python==0.2.56
+```
+
+For VMs with larger numbers of logical cores, this is not true anymore as the host can't map as
+many physical cores into the VM. In that case performance with the OpenBLAS backend might be worse.
+You can get back to a default installation with:
+
+```text
+cd ~/stuart-chatbot/
+source .venv/bin/activate
+pip install --force-reinstall --no-cache-dir llama-cpp-python==0.2.56
+```
+
+You can explore even more backends (see [llama-cpp-python supported backends](https://github.com/abetlen/llama-cpp-python?tab=readme-ov-file#supported-backends)),
+such as _cuBLAS_ (for Nvidia GPUs) or _Metal_ (for Mac GPUs). Typically, response times go down to a few to ten seconds when GPUs are used.
 
