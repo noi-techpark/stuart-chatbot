@@ -28,7 +28,7 @@ Ask me anything or enter 'q' to exit. Enter 'r' to restart our conversation.
 
 **Changelog of this document**
 
-2024-03-27 added note about llama-cpp-python compile options
+2024-03-27 added note about llama-cpp-python compile options  
 2024-03-25 first release - Chris Mair <chris@1006.org>
 
 ## Background
