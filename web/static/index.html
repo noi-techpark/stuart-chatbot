@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stuart</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    <script src="js/lib.js" defer></script>
+</head>
+<body>
+
+    <div id="header">
+        <span id="header_left"><a href="/">new session</a></span>
+        <span id="header_right">uuid (permalink): <a id="uuid" href=".">...</a> | inference server: <span id="heartbeat">...</span></span>
+    </div>
+
+    <div id="container">
+
+        <h1>Stuart <img src="images/stuart-bell.png" alt="stuart-bell" width="36" height="36" style="vertical-align: baseline;"></h1>
+
+        <p>(<b>S</b>uper <b>T</b>alkative <b>U</b>nderstanding <b>A</b>rtificial <b>R</b>esponse <b>T</b>echnology)</p>
+
+        <div id="conversation">
+        </div>
+
+        <div id="user_block">
+            <div id="user_textarea">
+                <span id="user_instruction">Enter to submit your question or Shift+Enter to insert a line break:</span>
+                <label for="user_question"></label><textarea id="user_question" cols="80" rows="5"></textarea></div>
+            <div id="user_wait_animation">&nbsp;</div>
+        </div>
+
+
+    </div>
+
+    <div id="footer">
+        <a href="https://github.com/noi-techpark/stuart-chatbot">Stuart Chatbot</a> &copy; 2024 NOI Spa
+    </div>
+
+</body>
+</html>
