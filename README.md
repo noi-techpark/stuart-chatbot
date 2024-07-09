@@ -11,44 +11,43 @@
   * [Preparing the Data](#preparing-the-data)
     * [Scraping the Documents](#scraping-the-documents)
     * [RAGging  the Documents](#ragging--the-documents)
-  * [Running the Chatbot](#running-the-chatbot)
+  * [Running the Chatbot on the command line](#running-the-chatbot-on-the-command-line)
+  * [Running the Chatbot as a web application](#running-the-chatbot-as-a-web-application)
   * [A Note about the Models used](#a-note-about-the-models-used)
   * [A Note about Performance](#a-note-about-performance)
 <!-- TOC -->
 
-```text
-Stuart: You rang 🛎️ ?
-Ask me anything or enter 'q' to exit. Enter 'r' to restart our conversation.
-> What is Stuart?
- Stuart is a chatbot that assists the customer care team of Open Data Hub in
- solving tickets. It uses the Open Data Hub Wiki, past tickets history, and the
- readme files of all repositories as inputs to help answer customer inquiries.
-> 
-```
-
 **Changelog of this document**
 
-2024-03-27 added note about llama-cpp-python compile options  
-2024-03-25 first release - Chris Mair <chris@1006.org>
+- 2024-07-07 expanded to include information about the new web frontend and add a few recommendations for custom deployments
+- 2024-03-27 added note about llama-cpp-python compile options
+- 2024-03-25 first release - Chris Mair <chris@1006.org>
+
+---
+
+![README-screen01.png](README-screen01.png)
+
+---
 
 ## Background
 
-Stuart uses RAG (_retrieval-augmented generation_). RAG improves the quality of responses by
+Stuart uses **RAG** (_retrieval-augmented generation_). RAG improves the quality of responses by
 combining the capabilities of two main components: a retrieval system and a generative model.
 
-The retrieval system searches a database of documents, specifically the Open Data Hub wiki,
+The **retrieval system** searches a database of documents, specifically the Open Data Hub wiki,
 the past tickets history and the readme files of all related repositories to find information
 that is relevant to the user's question. This step is crucial as it allows the generative model
 to access knowledge  that is not contained in its pre-trained parameters.
 
-The generative model receives a prompt that is constructed from the retrieved 
+The **generative model** receives a prompt that is constructed from the retrieved 
 information and the user's input.  It then generates a coherent, natural text based on that prompt.
 
 Stuart is a proof-of-concept system built with a few guiding principles:
 
-- the system should run locally (no proprietary APIs)
-- it should only rely on Free models
-- it should be able to run on modest hardware (no expensive datacenter GPUs)
+- the system should run locally (no proprietary APIs),
+- it should only rely on Free models,
+- it should be able to run on modest hardware (expensive datacenter GPUs are supported for fast performance, but not required),
+- it should be easily expandable for users that wish to deploy a RAG system using their own documents.
 
 Currently, there are a few well known Python packages to build RAG
 systems such as [LlamaIndex](https://docs.llamaindex.ai/en/stable/) and
@@ -64,17 +63,23 @@ such as text chunking and database access from scratch. It turned out that the
 resulting code was not much longer, but easier to understand with way less 
 dependencies.
 
+This makes Stuart **ideal as a testbed for experimenting with all the components
+of a RAG system.**
+
 ## Installation
 
 Stuart is best run on a *nix OS.
 
 The installation has been tested on macOS 13 with the command line developer
-tools and on Linux (Debian 12) with the developer tools (packages 
-`build-essential`, `git` and `python3-venv` must be installed). The developer
-tools are required, as one Python library does not (yet) offer binary releases
-and needs to be compiled.
+tools and on Linux (Debian 12 and Ubuntu 22.04) with the developer tools (packages 
+`build-essential`, `git` and `python3-venv` must be installed).
 
-You need **about 15 GiB of free space** for the model files and Python libraries.
+The developer tools are required in case not all Python libraries
+(`llama-cpp-python`, specifically) do provide binary releases for your
+platform and need to be compiled from source.
+
+You need **about 16 GiB of free space** for the model files and Python libraries,
+so make sure there is enough space.
 Additionally, some space for the PostgreSQL database (for the installation at
 NOI that's less than 200 MiB).
 
@@ -87,6 +92,7 @@ are listed in `requirements.txt`:
 llama-cpp-python==0.2.56
 psycopg2-binary==2.9.9
 sentence-transformers==2.6.0
+requests==2.31.0
 ```
 
 That being said, installation is as simple as running the following commands as a normal
@@ -95,7 +101,7 @@ user:
 ```text
 cd ~
 git clone https://github.com/noi-techpark/stuart-chatbot
-cd stuart-chatbot
+cd ~/stuart-chatbot
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt 
@@ -157,7 +163,14 @@ Ready!
 
 ### Scraping the Documents
 
-Before the chatbot can be used for the first time, we need to scrape the documents:
+Before the chatbot can be used for the first time, we need to **scrape the documents**.
+
+Scraping means:
+
+- download the documents,
+- save them as plain text files.
+
+For the Open Data Hub deployment, the document sources are:
 
 - the readme markdown files from the relevant NOI Techpark repositories,
 - the wiki markdown files from the ODH-Docs wiki,
@@ -165,7 +178,7 @@ Before the chatbot can be used for the first time, we need to scrape the documen
 
 For each category, there is a custom scraper in `scrapers/`.
 
-Two scrapers are specially crafted for Stuart:
+Two scrapers are specially crafted for the Open Data Hub:
 
 `scrape_readme.sh` scrapes the readme markdown files from the NOI Techpark repositories 
 on GitHub that are relevant to the Open Data Hub. The links are read from a hand-crafted 
@@ -173,11 +186,11 @@ file (`scrape_readme_urls.txt`).
 
 `scrape_wiki.sh` scrapes the wiki markdown files from the [ODH-Docs wiki](https://github.com/noi-techpark/odh-docs/wiki).
 
-Additionally, there is a more generic scraper:
-`scrape_rt.py` scrapes tickets from an installation of Best Practice' Request Tracker.
-Or more precisely: it scrapes transactions of type 'Ticket created', 'Correspondence added'
+Additionally, there is a more generic scraper to scrape tickets from a well
+known ticketing system (Best Practice' Request Tracker): `scrape_rt.py`.
+It scrapes transactions of type 'Ticket created', 'Correspondence added'
 or 'Comments added'. Remember to set up the location and credentials of the
-Request Tracker installation in 'scrape_rt.json'! 
+Request Tracker installation in `scrape_rt.json`! 
 
 The documents are stored in the `~/stuart-chatbot/data_*` directories.
 
@@ -189,45 +202,67 @@ new transactions.
 > The easiest way to run all these scripts is to set up a cronjob that runs
 > `cron/cron-scrape.sh` that will take care of everything.
 
+Stuart is designed to be easily extendable. You can **add scrapers for your own
+documents**. The only requirement is the scrapers output **plain text files** (of any
+dimension).
+
 ### RAGging  the Documents
 
-Before the chatbot can be used for the first time, we also need to "RAG" the documents.
-RAGging means:
+Once the documents are available in plain text format, we need to prepare the documents
+for (_retrieval-augmented generation_).
+
+This preparation ("RAGging") means:
 
 - read all the files from the `~/stuart-chatbot/data_*` directories
-
 - chunk them into overlapping chunks of roughly equal size
-
 - call a sentence embedding model (see [Wikipedia](https://en.wikipedia.org/wiki/Sentence_embedding))
-to encode meaningful semantic information from each chunk into a point in a high-dimensional vector space
-
+to encode meaningful semantic information from each chunk into a point in a
+high-dimensional vector space
 - store the file name, chunk and vector into PostgreSQL
 
 That the job for `rag/load.py`.
 
-When it runs for the first time, it will automatically download the sentence
-embedding model (2.1 GiB) and put it into ~/.cache.
 
 `rag/load.py` runs the model using the `sentence-transformers` library that
-is based on PyTorch. The run time very much depends on the capabilities of
-your hardware. On a system with a single CPU core this also might 
-**take a few hours**. Luckily also `load.py` works incrementally, so if there
-are no new documents, that are not yet loaded into PostgreSQL, it will exit
-after a few seconds.
+is based on PyTorch. When it runs for the first time, this library will automatically
+download the sentence embedding model (2.1 GiB) and put it into `~/.cache`.
+
+The run time very much depends on the capabilities of your hardware and the size
+of the document. On a system with a single CPU core and no GPU, sentence embedding the
+documents for the Open Data Hub (~ 20 million characters) might **take a few hours**.
+Luckily, `load.py` **works incrementally**, so that is typically not a problem.
 
 Note that `load.py` never deletes or updates documents from the database,
 it just adds new ones. For ticket transactions this is fine. However,
 wiki pages and readme change, so it is a good idea to delete these
-from time to time, so they can be RAGged again. This can be done in Postgres
-with `delete from ragdata where tag in ('readme', 'wiki');`.
+from time to time, so they can be RAGged again. `load.py` adds a tag
+to each loaded document according to its source directory. Here are
+the relevant lines from `load.py`.
 
-> Again, there is a handy script that can be called from **crontab**: `cron/cron-load.sh`.
+```text
+rag_dir("../data_readme", tag="readme", chunk_len=2000, overlap_len=250, hard_limit=2500)
+rag_dir("../data_wiki",   tag="wiki",   chunk_len=2000, overlap_len=250, hard_limit=2500)
+rag_dir("../data_rt",     tag="rt",     chunk_len=1000, overlap_len=250, hard_limit=1500)
+```
 
-## Running the Chatbot
+So, for example, if you want to clean up the readme and wiki files, just connect to Postgres:
 
-Currently, the chatbot is available as an interactive command line interface only.
+```text
+psql -h 127.0.0.1 -U rag ragdb
+```
 
-Run it with these commands:
+and run this query:
+
+```SQL
+delete from ragdata where tag in ('readme', 'wiki');`.
+```
+
+
+Again, there is a handy script that can be called from **crontab**: `cron/cron-load.sh`.
+
+## Running the Chatbot on the command line
+
+Run the chatbot with these commands:
 
 ```text
 cd ~/stuart-chatbot/
@@ -241,7 +276,7 @@ session!
 
 ---
 
-![cli-chatbot.png](cli-chatbot.png)
+![README-screen02.png](README-screen02.png)
 
 ---
 
@@ -276,6 +311,108 @@ Let's break down the components.
 > It is important to point out, that LLMs - as is well known - tend to hallucinate. So any
 > information should be double-checked!
 
+## Running the Chatbot as a web application
+
+Stuart also comes with a web application and a system to queue and process
+multiple conversations concurrently.
+
+The files related to this part are under the directory `web/`.
+
+Before running for the first time, edit `backend.json`:
+
+```JSON
+{
+  "bind_ip": "127.0.0.1",
+  "bind_port": "9001",
+  "preshared_secret": "**********"
+}
+```
+
+If you need to be able to connect via network instead of 127.0.0.1 (localhost), the value of `bind_ip`
+should be changed to `0.0.0.0` (or any IP address you want).
+
+**Please be aware that this opens up the web application to any users that may connect via
+your configured network. There is no built-in authentication for users of the web interface.
+Anybody who has access to the web application can open a session to input prompts and get
+the answers.**
+
+The value of `preshared_secret` is a secret string used by the inference backend to authenticate
+itself against the web application to be allowed to process jobs. Put some hard to guess string
+there.
+
+To just run the application in the virtual Python environment already prepared for the
+rest of Stuart:
+
+```text
+cd ~/stuart-chatbot
+source .venv/bin/activate
+cd web/
+pip install -r requirements.txt  # note this adds Flask
+python backend.py
+```
+
+Alternatively, you can run the application in a container with the provided Dockerfile.
+This can be an independent host, there's no need to have the other Stuart components
+installed. You don't need the Python environment or even Python on the host.
+
+Remember to set the value of `bind_ip` in `backend.json` to `0.0.0.0` and built the Docker image:
+
+```text
+cd ~/stuart-chatbot
+cd web/
+docker build -t stuart-web .
+```
+
+Then run the new image
+
+```text
+docker run -p 127.0.0.1:8080:9001 stuart-web
+```
+
+Again, take care on where exactly you map the endpoint. Here the application becomes visible
+on the host at `http://127.0.0.1:8080`. Change this according to what you need.
+
+At this point the web application is ready. If you connect a new session will be created,
+and you can insert and question that will be queued:
+
+![README-screen03.png](README-screen03.png)
+
+However, nobody is yet processing the queue! We need to go back to the directory where the
+command line application lives:
+
+```text
+cd ~/stuart-chatbot/
+source .venv/bin/activate
+cd rag/
+```
+
+Here there is another `backend.json`. Edit it to point to the URL of the web application and set
+the value of `preshared_secret` to the same string as above.
+
+```JSON
+{
+  "endpoint": "http://127.0.0.1:9001",
+  "preshared_secret": "**********"
+}
+```
+
+Then start two tasks:
+
+```text
+cd ~/stuart-chatbot/
+source .venv/bin/activate
+cd rag/
+python backend_query.py
+python backend_heartbeat.py
+```
+
+`backend_query.py` is the task that polls the web application and runs the jobs in the queue
+in the same way as `query.py` did for the command line interface.
+
+`backend_heartbeat.py` is not strictly necessary, it just updates a status field so the web
+application is aware of the fact the queue is being processed (see the top left status
+indicator of the web interface).
+
 ## A Note about the Models used
 
 The sentence embedding model is [bge-m3](https://huggingface.co/BAAI/bge-m3) (license: MIT).
@@ -296,12 +433,24 @@ Besides English, it understands also German and Italian, but doesn't speak them 
 
 From the same company, Mistral AI, a second model is available under the Apache 2 license:
 [Mixtral-8x7B-Instruct-v0.1](https://huggingface.co/mistralai/Mixtral-8x7B-Instruct-v0.1). This
-model is about 6 times larger, but only twice as slow. 
+model is about 6 times larger, but only twice as slow.
 
-Some quick tests suggest the quality of Stuart very much depends on the search, not so much the LLM.
-So the extra size of Mixtral might not be worth it.
+Of course, other local models can be used as long as they are supported by
+the `llama-cpp-python` library.
 
-The model is instantiated in `rag/query.py`.
+The model is instantiated in `rag/query.py` and `rag/backend_query.py`.
+
+While changing model might be interesting, for example with regard
+to supported languages, it has only a minor influence of the quality
+of the overall responses.
+
+Tests suggest the quality of RAG systems very much depends on the
+**search** and the size of the document chunks, not so much the LLM.
+
+As is common to all simple RAG systems, Stuart for example fails to answer
+questions  that would need to pick up pieces of information scattered around
+a large documentation base. Changing the LLM would not improve on this.
+
 
 ## A Note about Performance
 
