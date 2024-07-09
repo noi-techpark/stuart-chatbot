@@ -1,0 +1,128 @@
+        @font-face {
+            font-family: robotoregular;
+            src: url("fonts/Roboto-Regular-webfont.woff") format("woff");
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: robotobold;
+            src: url("fonts/Roboto-Bold-webfont.woff") format("woff");
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        #container {
+            font-family: robotoregular, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            margin-top: 0;
+            margin-left: auto;
+            margin-right: auto;
+            min-width: 600px;
+            max-width: 900px;
+            background-color: #ffffff;
+            padding: 16px;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
+            text-align: center;
+        }
+
+        #header {
+            font-family: robotoregular, sans-serif;
+            font-size: 12px;
+            line-height: 1.0;
+            margin-top: 0;
+            margin-left: auto;
+            margin-right: auto;
+            min-width: 600px;
+            max-width: 900px;
+            padding: 16px;
+            text-align: right;
+        }
+
+        #header_left {
+            display: inline-block;
+            float: left;
+        }
+
+        #header_right {
+            display: inline-block;
+            float: right;
+        }
+
+        #footer {
+            font-family: robotoregular, sans-serif;
+            font-size: 12px;
+            line-height: 1.0;
+            margin-top: 0;
+            margin-left: auto;
+            margin-right: auto;
+            min-width: 600px;
+            max-width: 900px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: robotobold, sans-serif;
+            font-size: 48px;
+            line-height: 1.0;
+            margin-top: 8px;
+            margin-bottom: 16px;
+        }
+
+        #conversation {
+            text-align: left;
+        }
+
+        p.conversation_question {
+            margin-left: 33%;
+            margin-right: 8px;
+            padding: 8px;
+            background-color: #EEEEEE;
+            border-radius: 5px;
+        }
+
+        p.conversation_answer {
+        }
+
+        p.conversation_source {
+            color: #66AA00
+        }
+
+        #user_block {
+            text-align: left;
+        }
+
+        #user_instruction {
+            font-size: 12px;
+        }
+
+        #user_question {
+            font-family: robotoregular, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+            width: 100%;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+
+        #user_wait_animation {
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .good {
+            color: #008800;
+            background-color: #DDFFDD;
+        }
+        .bad {
+            color: #880000;
+            background-color: #FFDDDD;
+        }
