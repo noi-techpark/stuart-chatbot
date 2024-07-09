@@ -352,10 +352,11 @@ python backend.py
 ```
 
 Alternatively, you can run the application in a container with the provided Dockerfile.
-This can be an independent host, there's no need to have the other Stuart components
-installed. You don't need the Python environment or even Python on the host.
+The Docker host can be an independent server, there's no need to have the other Stuart components
+installed. You don't need the Python environment or even Python at all on that host.
 
-Remember to set the value of `bind_ip` in `backend.json` to `0.0.0.0` and built the Docker image:
+Remember to set the value of `bind_ip` in `web/backend.json` to `0.0.0.0` and proceed to build
+the Docker image:
 
 ```text
 cd ~/stuart-chatbot
@@ -363,22 +364,23 @@ cd web/
 docker build -t stuart-web .
 ```
 
-Then run the new image
+Then run the new image:
 
 ```text
 docker run -p 127.0.0.1:8080:9001 stuart-web
 ```
 
-Again, take care on where exactly you map the endpoint. Here the application becomes visible
-on the host at `http://127.0.0.1:8080`. Change this according to what you need.
+Again, take care on where exactly you map the HTTP endpoint. With the `-p` parameter given
+here, the application becomes visible on the host at `http://127.0.0.1:8080`. Change the value
+according to what you need.
 
-At this point the web application is ready. If you connect a new session will be created,
-and you can insert and question that will be queued:
+At this point the web application is ready. If you connect, a new session will be created,
+and you can insert a question that will be queued:
 
 ![README-screen03.png](README-screen03.png)
 
-However, nobody is yet processing the queue! We need to go back to the directory where the
-command line application lives:
+However, nobody is yet processing the queue! So the question stays in the "question queued" state
+indefinitely. We need to go back to the directory, where the command line application lives:
 
 ```text
 cd ~/stuart-chatbot/
@@ -386,7 +388,7 @@ source .venv/bin/activate
 cd rag/
 ```
 
-Here there is another `backend.json`. Edit it to point to the URL of the web application and set
+In this directory, there is another `backend.json`. Edit it to point to the URL of the web application and set
 the value of `preshared_secret` to the same string as above.
 
 ```JSON
@@ -396,7 +398,7 @@ the value of `preshared_secret` to the same string as above.
 }
 ```
 
-Then start two tasks:
+Then start these two tasks:
 
 ```text
 cd ~/stuart-chatbot/
@@ -412,6 +414,11 @@ in the same way as `query.py` did for the command line interface.
 `backend_heartbeat.py` is not strictly necessary, it just updates a status field so the web
 application is aware of the fact the queue is being processed (see the top left status
 indicator of the web interface).
+
+At this point the web interface is ready and will process your questions.
+
+The session information (including all past questions and answers) is stored in a local
+SQLite database (file stuart.db). It is recreated automatically at startup, if it is not present.
 
 ## A Note about the Models used
 
