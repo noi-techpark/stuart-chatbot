@@ -505,3 +505,10 @@ pip install --force-reinstall --no-cache-dir llama-cpp-python==0.2.56
 You can explore even more backends (see [llama-cpp-python supported backends](https://github.com/abetlen/llama-cpp-python?tab=readme-ov-file#supported-backends)),
 such as _cuBLAS_ (for Nvidia GPUs) or _Metal_ (for Mac GPUs). Typically, response times go down to a few to ten seconds when GPUs are used.
 
+For example to compile for cuBLAS (for Nvidia GPUs):
+```text
+cd ~/stuart-chatbot/
+source .venv/bin/activate
+CMAKE_ARGS="-DLLAMA_CUBLAS=on" pip install --verbose --force-reinstall --no-cache-dir llama-cpp-python==0.2.56
+```
+
