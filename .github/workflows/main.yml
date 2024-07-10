@@ -24,6 +24,10 @@ jobs:
           X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
           X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
+          X_BIND_PORT: 9001
+          X_BIND_IP: 0.0.0.0
+          X_PRESHARED_SECRET: ${{ secrets.PRESHARED_SECRET }}
+
           X_SERVER_PORT: 1098
         with:
           working-directory: ${{ env.WORKING_DIRECTORY }}
@@ -46,6 +50,6 @@ jobs:
           docker-username: 'noi-techpark-bot'
           docker-password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           project-name: ${{ env.PROJECT_NAME }}
-          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure
+          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure/ansible
 
 

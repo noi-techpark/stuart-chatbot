@@ -4,20 +4,13 @@ from flask import Flask, jsonify, request, abort
 
 from libsql import *
 
+import os
 
 def main():
 
     sql_init()
 
-    try:
-        file = open("backend.json", "r")
-        parameters = json.load(file)
-        file.close()
-    except FileNotFoundError:
-        print("ERROR: cannot read configuration file.")
-        sys.exit(1)
-
-    preshared_secret = parameters["preshared_secret"]
+    preshared_secret = os.environ.get('PRESHARED_SECRET')
 
     app = Flask("stuart", static_folder="static", static_url_path="/")
 
@@ -126,7 +119,10 @@ def main():
         return jsonify({"msg": "OK"})
 
     if __name__ == '__main__':
-        app.run(host=parameters["bind_ip"], port=parameters["bind_port"])
+
+        bind_ip = os.environ.get('BIND_IP')
+        bind_port = os.environ.get('BIND_PORT')
+        app.run(host=bind_ip, port=bind_port)
 
 
 main()
