@@ -1,0 +1,14 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile
+    env_file: .env
+    ports:
+      - 8999:9001
+    tty: true
+#     volumes:
+#        - ./stuart.db:stuart.db
+#
+# volumes:
+#   stuart-db:

@@ -1,0 +1,19 @@
+---
+- hosts: all
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  tasks:
+    - name: Login to GitHub Container Registry
+      ansible.builtin.shell:
+        cmd: echo "{{ docker_password }}" | docker login "{{ docker_host }}" --username "{{ docker_username }}" --password-stdin
+    - name: Execute Docker deployment
+      ansible.builtin.include_role:
+        name: ansible-docker-deployment
+      vars:
+        docker_deployment_project_name: '{{ project_name }}'
+        docker_deployment_release_name: '{{ release_name }}'
+        docker_deployment_release_files:
+          - local: ../docker-compose.run.yml
+            remote: docker-compose.yml
+          - local: ../../.env
+            remote: .env

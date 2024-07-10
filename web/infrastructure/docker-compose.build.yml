@@ -1,0 +1,8 @@
+services:
+  app:
+    image: ${DOCKER_IMAGE}:${DOCKER_TAG}
+    env_file: 
+      - ../.env
+    build:
+      context: ../
+      dockerfile: infrastructure/docker/Dockerfile
