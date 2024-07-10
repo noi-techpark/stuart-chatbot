@@ -36,7 +36,7 @@ jobs:
         with:
           docker-username: ${{ github.actor }}
           docker-password: ${{ secrets.GITHUB_TOKEN }}
-          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastrcture
+          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure
 
       - name: Deploy application
         uses: noi-techpark/github-actions/docker-deploy@v2
@@ -46,6 +46,6 @@ jobs:
           docker-username: 'noi-techpark-bot'
           docker-password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           project-name: ${{ env.PROJECT_NAME }}
-          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastrcture
+          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure
 
 
