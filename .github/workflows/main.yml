@@ -29,9 +29,7 @@ jobs:
           working-directory: ${{ env.WORKING_DIRECTORY }}
  
       - name: Inject pre-shared secret
-        run:  sed -i 's/CHANGE_ME/${{ secrets.PRESHARED_SECRET }}/' backend.json 
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
+        run:  sed -i 's/CHANGE_ME/${{ secrets.PRESHARED_SECRET }}/' web/backend.json 
 
       - name: Build and push 
         uses: noi-techpark/github-actions/docker-build-and-push@v2
