@@ -7,8 +7,8 @@ services:
     ports:
       - 8999:9001
     tty: true
-#     volumes:
-#        - ./stuart.db:stuart.db
-#
-# volumes:
-#   stuart-db:
+    volumes:
+        - stuart-db:/usr/src/app/db/
+
+volumes:
+  stuart-db:

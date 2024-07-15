@@ -3,7 +3,7 @@ import json
 from typing import Optional, Dict
 
 sql_settings = {
-    "db_path": "stuart.db"
+    "db_path": "./db/stuart.db"
 }
 
 

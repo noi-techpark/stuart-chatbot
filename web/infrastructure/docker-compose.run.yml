@@ -6,4 +6,8 @@ services:
       - .env
     ports:
       - "${SERVER_PORT}:9001"
+    volumes:
+        - stuart-db:/usr/src/app/db/
       
+volumes:
+  stuart-db:
