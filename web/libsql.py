@@ -130,6 +130,20 @@ def sql_claim_job() -> Dict:
     return ret
 
 
+def sql_get_pending_count() -> Dict:
+    conn = sqlite3.connect(sql_settings.get("db_path"))
+    curs = conn.cursor()
+    curs.execute('''
+        SELECT count(*) as cnt FROM session
+            WHERE state = 'question-queued' or state = 'processing-question';
+    ''')
+    res = curs.fetchone()
+    ret = {"count": res[0]}
+    conn.commit()
+    conn.close()
+    return ret
+
+
 def sql_finish_job(unique_id: str, conversation_llm: str, conversation: str, source: str):
     conn = sqlite3.connect(sql_settings.get("db_path"))
     curs = conn.cursor()
