@@ -118,6 +118,18 @@ def main():
         sql_finish_job(unique_id, conversation_llm, conversation, source)
         return jsonify({"msg": "OK"})
 
+    '''
+    watchdog: if preshared secret matches, return the number
+    of sessions that have a pending question
+    '''
+    @app.route("/get_pending_count")
+    def get_pending_count():
+        secret = str(request.args.get("secret"))
+        if secret != preshared_secret:
+            abort(403)
+        ret = sql_get_pending_count()
+        return jsonify(ret)
+
     if __name__ == '__main__':
 
         bind_ip = os.environ.get('BIND_IP')
