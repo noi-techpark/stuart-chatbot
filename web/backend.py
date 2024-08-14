@@ -130,8 +130,19 @@ def main():
         ret = sql_get_pending_count()
         return jsonify(ret)
 
-    if __name__ == '__main__':
+    '''
+        watchdog: if preshared secret matches, return the
+        age of the latest job in seconds
+        '''
+    @app.route("/get_latest_job_age")
+    def get_latest_job_age():
+        secret = str(request.args.get("secret"))
+        if secret != preshared_secret:
+            abort(403)
+        ret = sql_get_latest_job_age()
+        return jsonify(ret)
 
+    if __name__ == '__main__':
         bind_ip = os.environ.get('BIND_IP')
         bind_port = os.environ.get('BIND_PORT')
         app.run(host=bind_ip, port=bind_port)
