@@ -58,6 +58,8 @@ while True:
 
     connection_timeout = 2.0
 
+    claim = {}
+
     while True:
 
         try:
@@ -75,9 +77,13 @@ while True:
             time.sleep(1.0)
             continue
 
+        try:
+            claim = json.loads(response.text)
+        except:
+            log("cannot parse JSON response from claim_job")
+            time.sleep(5.0)
+            continue
         break
-
-    claim = json.loads(response.text)
 
     conversation = json.loads(claim.get("conversation"))
     conversation_llm = json.loads(claim.get("conversation_llm"))
