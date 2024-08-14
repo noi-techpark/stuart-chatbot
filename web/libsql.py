@@ -144,6 +144,19 @@ def sql_get_pending_count() -> Dict:
     return ret
 
 
+def sql_get_latest_job_age() -> Dict:
+    conn = sqlite3.connect(sql_settings.get("db_path"))
+    curs = conn.cursor()
+    curs.execute('''
+         select STRFTIME('%s', 'now') - max(modified) from session;
+    ''')
+    res = curs.fetchone()
+    ret = {"age": res[0]}
+    conn.commit()
+    conn.close()
+    return ret
+
+
 def sql_finish_job(unique_id: str, conversation_llm: str, conversation: str, source: str):
     conn = sqlite3.connect(sql_settings.get("db_path"))
     curs = conn.cursor()
