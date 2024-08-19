@@ -120,26 +120,26 @@ def main():
 
     '''
     watchdog: if preshared secret matches, return the number
-    of sessions that have a pending question
+    of sessions for each state
     '''
-    @app.route("/get_pending_count")
-    def get_pending_count():
+    @app.route("/get_state_count")
+    def get_state_count():
         secret = str(request.args.get("secret"))
         if secret != preshared_secret:
             abort(403)
-        ret = sql_get_pending_count()
+        ret = sql_get_state_count()
         return jsonify(ret)
 
     '''
         watchdog: if preshared secret matches, return the
-        age of the latest job in seconds
+        age of the latest session in seconds for each state
         '''
-    @app.route("/get_latest_job_age")
-    def get_latest_job_age():
+    @app.route("/get_state_latest_age")
+    def get_state_latest_age():
         secret = str(request.args.get("secret"))
         if secret != preshared_secret:
             abort(403)
-        ret = sql_get_latest_job_age()
+        ret = sql_get_state_latest_age()
         return jsonify(ret)
 
     if __name__ == '__main__':

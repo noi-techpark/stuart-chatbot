@@ -130,28 +130,37 @@ def sql_claim_job() -> Dict:
     return ret
 
 
-def sql_get_pending_count() -> Dict:
+def sql_get_state_count() -> Dict:
     conn = sqlite3.connect(sql_settings.get("db_path"))
     curs = conn.cursor()
     curs.execute('''
-        SELECT count(*) as cnt FROM session
-            WHERE state = 'question-queued' or state = 'processing-question';
+        SELECT state, count(*) as cnt FROM session
+            GROUP BY state;
     ''')
-    res = curs.fetchone()
-    ret = {"count": res[0]}
+    ret = {}
+    while True:
+        res = curs.fetchone()
+        if res is None:
+            break
+        ret[res[0]] = res[1]
     conn.commit()
     conn.close()
     return ret
 
 
-def sql_get_latest_job_age() -> Dict:
+def sql_get_state_latest_age() -> Dict:
     conn = sqlite3.connect(sql_settings.get("db_path"))
     curs = conn.cursor()
     curs.execute('''
-         select STRFTIME('%s', 'now') - max(modified) from session;
+         select state, STRFTIME('%s', 'now') - max(modified) as age from session
+            GROUP BY state;
     ''')
-    res = curs.fetchone()
-    ret = {"age": res[0]}
+    ret = {}
+    while True:
+        res = curs.fetchone()
+        if res is None:
+            break
+        ret[res[0]] = res[1]
     conn.commit()
     conn.close()
     return ret
@@ -171,7 +180,7 @@ def sql_finish_job(unique_id: str, conversation_llm: str, conversation: str, sou
     ''', [conversation_llm, conversation, source, unique_id])
     conn.commit()
     conn.close()
-    print("success finished job for uuid = %s" %  unique_id)
+    print("success finished job for uuid = %s" % unique_id)
 
 
 def sql_heartbeat():
