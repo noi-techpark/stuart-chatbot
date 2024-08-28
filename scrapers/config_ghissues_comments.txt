@@ -1,0 +1,5 @@
+id
+updated_at
+user.login
+author_association
+body
