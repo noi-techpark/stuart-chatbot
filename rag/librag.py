@@ -111,11 +111,10 @@ def rag_dir(dirname: str, tag: str,
 
     cursor = open_cursor()
 
-    model = None
-    model_use_count = 0
+    model = get_embedding_model()
 
     num_files_old = num_files_new = num_chunks = 0
-    t1_chunk = t1_model_load = t1_embed = t1_store = 0.0
+    t1_chunk = t1_embed = t1_store = 0.0
 
     for file_name in files:
 
@@ -133,8 +132,8 @@ def rag_dir(dirname: str, tag: str,
             continue
         file.close()
 
-        if len(body) == 0:
-            print("INFO: rag_dir(): skipping empty file '%s'." % file_name)
+        if len(body) < 5:
+            print("INFO: rag_dir(): skipping (almost) empty file '%s'." % file_name)
             continue
 
         res = select_one(cursor,
@@ -154,22 +153,9 @@ def rag_dir(dirname: str, tag: str,
         for chunk in chunks:
             strings.append(body[chunk["start"]:chunk["end"]])
         t1_chunk += time.time() - t0
-        t0 = time.time()
 
-        if model is not None and model_use_count == 50:
-            # sentence transformers has a memory leak,
-            # reload the model and garbage collect from time to time
-            # to mitigate this
-            print("*** reloading model")
-            model = None
-            model_use_count = 0
-            gc.collect()
-        if model is None:
-            model = get_embedding_model()
-        t1_model_load += time.time() - t0
         t0 = time.time()
-        embeddings = model.encode(strings)
-        model_use_count += 1
+        embeddings = model.encode(strings, batch_size=1)
         t1_embed += time.time() - t0
         t0 = time.time()
         for i in range(0, len(embeddings)):
@@ -187,8 +173,8 @@ def rag_dir(dirname: str, tag: str,
         gc.collect()
 
     close_cursor(cursor)
-    print("%d/%d new files, %d new chunks, chunked in %.3fs, model (re-)loaded in %.3fs, embedded in %.3fs, stored in %.3fs" %
-          (num_files_new, (num_files_old + num_files_new), num_chunks, t1_chunk, t1_model_load, t1_embed, t1_store))
+    print("%d/%d new files, %d new chunks, chunked in %.3fs, embedded in %.3fs, stored in %.3fs" %
+          (num_files_new, (num_files_old + num_files_new), num_chunks, t1_chunk, t1_embed, t1_store))
 
 
 def search(cursor: psycopg2.extras.DictCursor, top: int, query_str: str) -> List[Dict[str, any]]:
