@@ -1,4 +1,4 @@
-# ------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------
 # Scrape all relevant issues in repositories of the given Github account.
 #
 # Note:
@@ -13,7 +13,9 @@
 #   - attributes to extract from comments are configured in 'config_ghissues_comments.txt'.
 #   - scraped texts are stored in '../data_ghissues/X-issue-Y.txt',
 #     where X is the repository and Y is the issue ID
-# ------------------------------------------------------------------------------
+#   - summary file '../data_ghissues/scraped_repo_and_issues.txt' contains stats of scraped issues,
+#     also used to compare if issue is updated
+# --------------------------------------------------------------------------------------------------
 
 
 import urllib.request
@@ -42,7 +44,8 @@ format_attributes = ["Body"]
 base_url = "https://api.github.com"
 project_owner = "noi-techpark"
 out_dir = "../data_ghissues"
-test_param = "?per_page=1&page=1" # per_page for number of entries, page for number of pages
+summary_file_name = f"{out_dir}/scraped_repo_and_issues.txt"
+test_param = "" # eg. "?per_page=1&page=1", per_page for number of entries, page for number of pages
 
 # --- functions ---
 
@@ -54,7 +57,6 @@ def make_github_request(url):
     req = urllib.request.Request(f"{url}{test_param}")
     if token:
         req.add_header('Authorization', f'Bearer {token}')
-        print("github token used")
     return req
 
 def get_repositories():
@@ -121,6 +123,8 @@ def format_issue(data):
     pretty_text = ""
     for key, value in data.items():
         formatted_key = to_sentence_case(key)
+        if not value:
+            value = "None"
         if formatted_key in format_attributes:
             pretty_text += f"{formatted_key}:\n"
             pretty_text += textwrap.indent(value, '    ')
@@ -135,6 +139,29 @@ def to_sentence_case(key):
         return words[0].capitalize()
     return words[0].capitalize() + ' ' + ' '.join(word.lower() for word in words[1:])
 
+def check_updated(records, repo, json_issues, last_update):
+    issue_number = json_issues["number"]
+    comment_count = json_issues["comments"]
+    updated_at = json_issues["updated_at"]
+    for record in records:
+        if record["Repository"] == repo and record["Issue number"] == issue_number:
+            if record["Comment count"] == comment_count and last_update > updated_at :
+                return True
+    return False
+    
+def read_previous_content(content):
+    if not content:
+        return "", 0
+    lines = content.split("\n")
+    headers = lines[0].split(", ")
+    records = []
+    for line in lines[1:-2]:
+        values = line.split(", ")
+        values[1] = int(values[1])  # Issue number
+        values[2] = int(values[2])  # Comment count
+        records.append(dict(zip(headers, values)))
+    last_update = lines[-1].split(": ", 1)[1]
+    return records, last_update
 
 
 # --- main program ---
@@ -144,36 +171,69 @@ def main():
     issue_attributes = load_config(config_ghissues)
     comment_attributes = load_config(config_ghissues_comments)
 
-    # old_count = 0
-    # new_count = 0
-    # nil_count = 0
+    updated_issues = 0
+    total_issues = 0
     
-    json_repo = get_repositories()
-    list_repos = [item['name'] for item in json_repo]
+    try:
+        summary_file = open(summary_file_name, 'r')
+        previous_content = summary_file.read()
+        summary_file.close()
+    except FileNotFoundError:
+        print("INFO: Previous summary file not found")
+        previous_content = ""
+    records, last_update = read_previous_content(previous_content)
+    temp_file_name = f"{out_dir}/temp_summary_file.txt"
+    temp_summary_file = open(temp_file_name, 'w')
+    temp_summary_file.write(f"Repository, Issue number, Comment count\n")
 
-    for repo in list_repos:
-        json_repo_issues = get_repo_issues(repo)
-        list_issue_numbers = [item['number'] for item in json_repo_issues]
-        
-        for issue_number in list_issue_numbers:
-            json_issues = get_issue(repo, issue_number)
-            text = extract_and_format(issue_attributes, {}, json_issues)
+    try:
+        json_repo = get_repositories()
+        list_repos = [item['name'] for item in json_repo]
 
-            json_comments = get_comments(repo, issue_number)
-            extracted_data = {}
-            for count, comment in enumerate(json_comments):
-                extracted_data["comment"] = count+1
-                text += extract_and_format(comment_attributes, extracted_data, comment)
+        for repo in list_repos:
+            json_repo_issues = get_repo_issues(repo)
+            list_issue_numbers = [item['number'] for item in json_repo_issues]
             
-            file_name = "%s/%s-issue-%d.txt" % (out_dir, repo, int(issue_number))
-            file = open(file_name, 'w')
-            file.write(text)
-            file.close()
+            for issue_number in list_issue_numbers:
+                json_issues = get_issue(repo, issue_number)
+                updated = check_updated(records, repo, json_issues, last_update)
+                
+                comment_count = json_issues["comments"]
+                
+                if not records or not updated: 
+                    text = extract_and_format(issue_attributes, {}, json_issues)
 
+                    json_comments = get_comments(repo, issue_number)
+                    comment_count = len(json_comments)
+                    extracted_data = {}
+                    comment_count = 0
+                    for comment in json_comments:
+                        comment_count += 1
+                        extracted_data["comment"] = comment_count
+                        text += extract_and_format(comment_attributes, extracted_data, comment)
+                        
+                    file_name = "%s/%s-issue-%d.txt" % (out_dir, repo, int(issue_number))
+                    file = open(file_name, 'w')
+                    file.write(text)
+                    file.close()
+                    updated_issues += 1
+                
+                total_issues += 1                
+                temp_summary_file.write(f"{repo}, {issue_number}, {comment_count}\n")
+    except Exception as e:
+        print(f"ERROR: {e}")
+        
+            
     t1 = time.time()
+    temp_summary_file.write(f"Total number of issues: {total_issues}\n")
+    local_time = time.localtime()
+    formatted_time = time.strftime("%Y-%m-%dT%H:%M:%SZ", local_time)
+    temp_summary_file.write(f"Updated on: {formatted_time}")
+    temp_summary_file.close()
+    
+    os.replace(temp_file_name, summary_file_name)
 
-    # print("%d ticket bodies (%d old, %d new, %d nil) scraped in %.3f seconds" %
-    #       (old_count + new_count + nil_count, old_count, new_count, nil_count, t1 - t0))
-
+    print("%d issues (%d old, %d updated) scraped in %.3f seconds" %
+          (total_issues, total_issues-updated_issues, updated_issues, t1 - t0))
 
 main()
