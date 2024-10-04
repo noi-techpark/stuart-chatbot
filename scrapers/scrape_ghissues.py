@@ -13,7 +13,7 @@
 #   - attributes to extract from comments are configured in 'config_ghissues_comments.txt'.
 #   - scraped texts are stored in '../data_ghissues/X-issue-Y.txt',
 #     where X is the repository and Y is the issue ID
-#   - summary file '../data_ghissues/00_summary_scraped_repo_and_issues.txt' contains stats of scraped issues,
+#   - summary file '../log_ghissues/00_summary_scraped_repo_and_issues.txt' contains stats of scraped issues,
 #     also used to compare if issue is updated
 # --------------------------------------------------------------------------------------------------
 
@@ -56,7 +56,8 @@ config_ghissues = "config_ghissues.txt"
 config_ghissues_comments = "config_ghissues_comments.txt"
 format_attributes = ["Body"]
 out_dir = "../data_ghissues"
-summary_file_name = f"{out_dir}/00_summary_scraped_repo_and_issues.txt"
+log_dir = "../log_ghissues"
+summary_file_name = f"{log_dir}/00_summary_scraped_repo_and_issues.txt"
 request_count = 0
 
 # --- functions ---
@@ -203,11 +204,12 @@ def main():
         summary_file = open(summary_file_name, 'r')
         previous_content = summary_file.read()
         summary_file.close()
+        logger.info("previous summary file found and read")
     except FileNotFoundError:
         logger.info("previous summary file not found")
         previous_content = ""
     records, last_update = read_previous_content(previous_content)
-    temp_file_name = f"{out_dir}/01_temp_summary_file.txt"
+    temp_file_name = f"{log_dir}/01_temp_summary_file.txt"
     temp_summary_file = open(temp_file_name, 'w')
     temp_summary_file.write(f"Repository, Issue number, Comment count\n")
 
