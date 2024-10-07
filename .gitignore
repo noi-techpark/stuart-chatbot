@@ -4,6 +4,9 @@ data_rt/*.md
 data_rt/*.txt
 data_wiki/*.md
 data_wiki/*.txt
+data_ghissues/*.txt
+log_ghissues/*.txt
+
 .venv
 
 .env

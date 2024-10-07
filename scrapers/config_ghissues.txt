@@ -1,0 +1,15 @@
+url
+id
+number
+labels.name
+assignees
+comments
+state
+locked
+created_at
+updated_at
+closed_at
+user.login
+author_association
+title
+body
