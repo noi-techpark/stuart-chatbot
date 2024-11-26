@@ -47,6 +47,7 @@ except FileNotFoundError:
 
 token = gh_param.get("github_token")
 project_owner = gh_param.get("project_owner")
+rate_limit_delay_sec = gh_param.get("rate_limit_delay_sec")
 
 base_url = "https://api.github.com"
 query_params = "?per_page=100" # per_page for number of entries
@@ -68,19 +69,34 @@ def load_config(config_file):
     
 def make_github_request(url, function_name):
     global request_count
-    req = urllib.request.Request(url)
-    if token:
-        req.add_header('Authorization', f'Bearer {token}')
-    with urllib.request.urlopen(req) as response:
-        if response.getcode() != 200:
-            logger.warning("%s got response %s.", function_name, response.getcode())
-            return []
-        data = response.read()
-        header_link = response.headers.get("Link")
-        request_count += 1
-        if request_count % 1 == 0:
-            logger.debug("Executing: %s", url)
-    json_data = json.loads(data.decode('utf-8'))
+
+    success = False
+
+    while not success:
+        try:
+            req = urllib.request.Request(url)
+            if token:
+                req.add_header('Authorization', f'Bearer {token}')
+            with urllib.request.urlopen(req) as response:
+                if response.getcode() != 200:
+                    raise Exception("unexpected status code: %d" % response.getcode())
+                data = response.read()
+                header_link = response.headers.get("Link")
+                request_count += 1
+                if request_count % 1 == 0:
+                    logger.debug("Executing: %s", url)
+            json_data = json.loads(data.decode('utf-8'))
+            success = True
+        except Exception as ex:
+            print("Got exception:")
+            print(ex)
+            print("Will retry in 5 minutes...")
+            time.sleep(300)
+   
+    # need to sleep some time due to rate limits:
+    # https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api
+    time.sleep(rate_limit_delay_sec)
+
     return json_data, header_link
 
 def extract_next_link(header):
