@@ -1,128 +1,233 @@
-        @font-face {
-            font-family: robotoregular;
-            src: url("fonts/Roboto-Regular-webfont.woff") format("woff");
-            font-weight: normal;
-            font-style: normal;
-        }
+@font-face {
+    font-family: robotoregular;
+    src: url("fonts/Roboto-Regular-webfont.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
 
-        @font-face {
-            font-family: robotobold;
-            src: url("fonts/Roboto-Bold-webfont.woff") format("woff");
-            font-weight: normal;
-            font-style: normal;
-        }
+@font-face {
+    font-family: robotobold;
+    src: url("fonts/Roboto-Bold-webfont.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
 
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
 
-        #container {
-            font-family: robotoregular, sans-serif;
-            font-size: 16px;
-            line-height: 1.5;
-            margin-top: 0;
-            margin-left: auto;
-            margin-right: auto;
-            min-width: 600px;
-            max-width: 900px;
-            background-color: #ffffff;
-            padding: 16px;
-            box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
-            text-align: center;
-        }
+#container {
+    font-family: robotoregular, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    margin-top: 0;
+    margin-left: auto;
+    margin-right: auto;
+    min-width: 600px;
+    max-width: 900px;
+    background-color: #ffffff;
+    padding: 16px;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
+    text-align: center;
+}
 
-        #header {
-            font-family: robotoregular, sans-serif;
-            font-size: 12px;
-            line-height: 1.0;
-            margin-top: 0;
-            margin-left: auto;
-            margin-right: auto;
-            min-width: 600px;
-            max-width: 900px;
-            padding: 16px;
-            text-align: right;
-        }
+#header {
+    font-family: robotoregular, sans-serif;
+    font-size: 12px;
+    line-height: 1;
+    margin-top: 0;
+    margin-left: auto;
+    margin-right: auto;
+    min-width: 600px;
+    max-width: 900px;
+    padding: 16px;
+    text-align: right;
+}
 
-        #header_left {
-            display: inline-block;
-            float: left;
-        }
+#header_left {
+    display: inline-block;
+    float: left;
+}
 
-        #header_right {
-            display: inline-block;
-            float: right;
-        }
+#header_right {
+    display: inline-block;
+    float: right;
+}
 
-        #footer {
-            font-family: robotoregular, sans-serif;
-            font-size: 12px;
-            line-height: 1.0;
-            margin-top: 0;
-            margin-left: auto;
-            margin-right: auto;
-            min-width: 600px;
-            max-width: 900px;
-            padding: 16px;
-            text-align: center;
-        }
+#footer {
+    font-family: robotoregular, sans-serif;
+    font-size: 12px;
+    line-height: 1;
+    margin-top: 0;
+    margin-left: auto;
+    margin-right: auto;
+    min-width: 600px;
+    max-width: 900px;
+    padding: 16px;
+    text-align: center;
+}
 
-        h1 {
-            font-family: robotobold, sans-serif;
-            font-size: 48px;
-            line-height: 1.0;
-            margin-top: 8px;
-            margin-bottom: 16px;
-        }
+h1 {
+    font-family: robotobold, sans-serif;
+    font-size: 48px;
+    line-height: 1;
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
 
-        #conversation {
-            text-align: left;
-        }
+#conversation {
+    text-align: left;
+}
 
-        p.conversation_question {
-            margin-left: 33%;
-            margin-right: 8px;
-            padding: 8px;
-            background-color: #EEEEEE;
-            border-radius: 5px;
-        }
+p.conversation_question {
+    margin-left: 33%;
+    margin-right: 8px;
+    padding: 8px;
+    background-color: #eeeeee;
+    border-radius: 5px;
+}
 
-        p.conversation_answer {
-        }
+p.conversation_answer {
+}
 
-        p.conversation_source {
-            color: #66AA00
-        }
+p.conversation_source {
+    color: #66aa00;
+}
 
-        #user_block {
-            text-align: left;
-        }
+#user_block {
+    text-align: left;
+}
 
-        #user_instruction {
-            font-size: 12px;
-        }
+#user_instruction {
+    font-size: 12px;
+}
 
-        #user_question {
-            font-family: robotoregular, sans-serif;
-            font-size: 16px;
-            line-height: 1.5;
-            width: 100%;
-            box-sizing: border-box;
-            resize: vertical;
-        }
+#user_question {
+    font-family: robotoregular, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+}
 
-        #user_wait_animation {
-            font-size: 12px;
-            text-align: center;
-        }
+#user_wait_animation {
+    font-size: 12px;
+    text-align: center;
+}
 
-        .good {
-            color: #008800;
-            background-color: #DDFFDD;
-        }
-        .bad {
-            color: #880000;
-            background-color: #FFDDDD;
-        }
+.good {
+    color: #008800;
+    background-color: #ddffdd;
+}
+.bad {
+    color: #880000;
+    background-color: #ffdddd;
+}
+
+.header {
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Container */
+.header-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 75px;
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+    gap: 17px;
+}
+
+.separator {
+    height: 40px;
+    width: 1px;
+    background-color: #dee2e6;
+    margin: 0 5px;
+}
+
+.logo img {
+    height: 40px;
+    display: block;
+}
+
+/* Main Content Area */
+.main-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 0;
+}
+
+.flightdata-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 0 auto;
+    padding: 30px;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Navigation */
+.main-nav ul,
+.sub-nav ul {
+    display: flex;
+    align-items: center;
+}
+
+.main-nav li,
+.sub-nav li {
+    position: relative;
+    margin: 0 8px;
+}
+
+.main-nav a,
+.sub-nav a {
+    display: block;
+    padding: 8px 10px;
+    color: #212529;
+    font-weight: 500;
+    font-size: 15px;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+}
+
+.main-nav a:hover,
+.sub-nav a:hover {
+    color: #0d6efd;
+}
+
+.drop-img {
+    font-size: 10px;
+    margin-left: 5px;
+    line-height: 1;
+    transition: transform 0.3s ease;
+}
+
+.sub-nav {
+    display: flex;
+    align-items: center;
+}
+
+.sub-nav .logo-eu,
+.sub-nav .logo-noi {
+    height: 40px;
+    display: block;
+}
