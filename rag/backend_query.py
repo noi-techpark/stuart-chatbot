@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # ------------------------------------------------------------------------------
 # Chat with the backend.
 # This code performs the same operations on the LLM as query.py,
