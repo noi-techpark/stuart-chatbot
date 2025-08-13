@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # ------------------------------------------------------------------------------
 # Interactive chat application.
 # In a loop, prompt for user input and perform vector search, prompt

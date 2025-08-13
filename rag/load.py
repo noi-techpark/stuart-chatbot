@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # ------------------------------------------------------------------------------
 # RAG all files in the given directory, chunk them, find the embedding
 # vectors and store the chunks and vectors into PostgreSQL.
