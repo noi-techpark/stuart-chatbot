@@ -1,20 +1,22 @@
+[![REUSE Compliance](https://github.com/noi-techpark/stuart-chatbot/actions/workflows/reuse-lint.yml/badge.svg)](https://github.com/noi-techpark/opendatahub-docs/wiki/REUSE#badges)
+
 # Stuart 🛎
 
 (**S**uper **T**alkative **U**nderstanding **A**rtificial **R**esponse **T**echnology)
 
 <!-- TOC -->
-* [Stuart 🛎](#stuart-)
-  * [Background](#background)
-  * [Installation](#installation)
-    * [Stuart](#stuart)
-    * [PostgreSQL](#postgresql)
-  * [Preparing the Data](#preparing-the-data)
-    * [Scraping the Documents](#scraping-the-documents)
-    * [RAGging  the Documents](#ragging--the-documents)
-  * [Running the Chatbot on the command line](#running-the-chatbot-on-the-command-line)
-  * [Running the Chatbot as a web application](#running-the-chatbot-as-a-web-application)
-  * [A Note about the Models used](#a-note-about-the-models-used)
-  * [A Note about Performance](#a-note-about-performance)
+- [Stuart 🛎](#stuart-)
+  - [Background](#background)
+  - [Installation](#installation)
+    - [Stuart](#stuart)
+    - [PostgreSQL](#postgresql)
+  - [Preparing the Data](#preparing-the-data)
+    - [Scraping the Documents](#scraping-the-documents)
+    - [RAGging  the Documents](#ragging--the-documents)
+  - [Running the Chatbot on the command line](#running-the-chatbot-on-the-command-line)
+  - [Running the Chatbot as a web application](#running-the-chatbot-as-a-web-application)
+  - [A Note about the Models used](#a-note-about-the-models-used)
+  - [A Note about Performance](#a-note-about-performance)
 <!-- TOC -->
 
 **Changelog of this document**
