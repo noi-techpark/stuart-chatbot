@@ -1,4 +1,0 @@
-llama-cpp-python==0.2.56
-psycopg2-binary==2.9.9
-sentence-transformers==2.6.0
-requests==2.31.0
