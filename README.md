@@ -5,22 +5,23 @@
 (**S**uper **T**alkative **U**nderstanding **A**rtificial **R**esponse **T**echnology)
 
 <!-- TOC -->
-* [Stuart 🛎](#stuart-)
   * [Background](#background)
   * [Installation](#installation)
-    * [Stuart](#stuart)
+    * [Stuart RAG](#stuart-rag)
     * [Required service: Postgres with the pgvector extension](#required-service-postgres-with-the-pgvector-extension)
-    * [Required service: LLM running behind a OpenAI-compatible chat-completion endpoint](#required-service-llm-running-behind-a-openai-compatible-chat-completion-endpoint)
+    * [Required service: LLM inference web service endpoint](#required-service-llm-inference-web-service-endpoint)
       * [Which LLM to use?](#which-llm-to-use)
       * [How to run the LLM?](#how-to-run-the-llm)
   * [Running](#running)
     * [Preparing and RAGging the documents](#preparing-and-ragging-the-documents)
     * [Running the chatbot on the command line](#running-the-chatbot-on-the-command-line)
-  * [Optional: Document Scrapers](#optional-document-scrapers)
-  * [Optional: Converting documents to markdown (TODO)](#optional-converting-documents-to-markdown-todo)
-  * [Optional: Running the chatbot as a web application](#optional-running-the-chatbot-as-a-web-application)
+    * [Running the chatbot as a web application](#running-the-chatbot-as-a-web-application)
+  * [Document scrapers (optional)](#document-scrapers-optional)
+  * [FAQ](#faq)
+    * [What about database performance?](#what-about-database-performance)
+    * [What about documents in other formats (.pdf, .docx, etc...)?](#what-about-documents-in-other-formats-pdf-docx-etc)
+    * [What about chunk length? What about top-N searches?](#what-about-chunk-length-what-about-top-n-searches)
 <!-- TOC -->
-
 
 **Changelog of this document**
 
@@ -29,12 +30,9 @@
 - 2024-03-27 added note about llama-cpp-python compile options
 - 2024-03-25 first release - Chris Mair <chris@1006.org>
 
----
-
 ![README-screen01.png](README-screen01.png)
 
 ---
-
 ## Background
 
 Stuart uses **RAG** (_retrieval-augmented generation_). RAG improves the quality of responses by
@@ -70,24 +68,21 @@ resulting code was not much longer, but easier to understand and using way fewer
 dependencies.
 
 This makes Stuart **ideal as a testbed for experimenting with all the components
-of a RAG system.**
-
-Early 2026 Stuart was updated to be even more flexible and easier to use.
+of a RAG system**. Early 2026 Stuart was updated to be even more flexible and **easier to use**.
 
 At **NOI Techpark**, Stuart is installed with access to documentation related to the **Open Data Hub**.
-There are custom scrapers for the Github issues, the repository readme files, the past help desk
+There are custom scrapers for the GitHub issues, the repository readme files, the past help desk
 tickets and the wiki.
 
+---
 ## Installation
 
-### Stuart
+### Stuart RAG
 
-To install Stuart your computer should have Python3 installed (with the ability to create virtual environments)
+To install the Stuart RAG code, your computer should have Python3 installed (with the ability to create virtual environments)
 as well as have `git` available. Any Linux system should do, as well as macOS with the developer tools installed.
 
-Expect install size for this part to be about 15 GiB.
-
-You can check these dependencies with these commands:
+You can check the availability of these requirements with these commands:
 
 ```shell
 python3 --version                                   # should give some version >= 3.9
@@ -95,9 +90,9 @@ echo "import venv, ensurepip" | python3; echo $?    # should give `0`
 git --version                                       # should give some version >= 2.18
 ```
 
-If the second command fails on Debian/Ubuntu, run a `sudo apt install python3-venv` to get the required Python modules.
+> If the second command fails on Debian/Ubuntu, run a `sudo apt install python3-venv` to get the required Python modules.
 
-If everything is good, fetch Stuart from its Github page and create a virtual environment for it:
+If everything is good, fetch Stuart from its GitHub page and create a virtual environment for it:
 
 ```shell
 cd ~
@@ -111,7 +106,7 @@ Remember to activate this virtual environment, whenever you work in it:
 source ~/stuart-chatbot/.venv/bin/activate
 ```
 
-The core functionality of Stuart is under the `rag/` directory. Change to that directory and install the requirements
+The core Stuart RAG code is under the `rag/` subdirectory. Change to that directory and install the requirements
 into the virtual environment:
 
 ```shell
@@ -120,16 +115,16 @@ cd ~/stuart-chatbot/rag
 pip install -r requirements.txt
 ```
 
-> A note about install size.
+> Expect about **15 GiB** of storage for the installation of this part.
 > 
 > While there are just three dependencies, one dependency (the package `sentence-transformers`) is unfortunately huge.
 > After installing that one, the virtual environment directory will be 7.3 GiB in size. After running it the first time,
-> 2.2 GiB will be added (model download). Additionally, pip will cache another 4 GiB of files.
+> 2.2 GiB will be added (embedding model download). Additionally, pip will cache another 4 GiB of files.
 
 ### Required service: Postgres with the pgvector extension
 
-Stuart needs access to a [Postgres](https://www.postgresql.org/) database server with
-the [pgvector](https://github.com/pgvector/pgvector) extension.
+Stuart needs access to a **[Postgres](https://www.postgresql.org/) database server** with
+the **[pgvector](https://github.com/pgvector/pgvector) extension**.
 
 This can be any installation, local or managed. 
 
@@ -175,81 +170,83 @@ depending on your environment.
 If you're using a different Postgres service (or use a stronger password), update the information under
 `~/stuart-chatbot/rag/secrets_pg.json` accordingly, so Stuart will be able to connect to your Postgres service.
 
-As long as you're handling less than, say, 100 MB of text, don't worry about performance. Search times won't matter much.
-Once you feel search time increases, you can create an index on the vector column. Connect again to Postgres and just run
-this once (it will be updated automatically from here on):
 
-```sql
-CREATE INDEX ragdata_embedding_hnsw_ix ON ragdata
-USING hnsw (embedding vector_cosine_ops);
-```
+### Required service: LLM inference web service endpoint
 
-### Required service: LLM running behind a OpenAI-compatible chat-completion endpoint
+Stuart needs access to a large language model (LLM). All you need is provide Stuart with a so called
+**OpenAI-compatible chat-completion endpoint**. That's a fancy word to describe a LLM running behind a
+web service using a de-facto standard API.
 
-Stuart needs access to a large language model (LLM). All you need is provide Stuart with a so called OpenAI-compatible chat-completion
-endpoint. That's a fancy word to describe a LLM running behind a de-facto standard web service.
-
-There are two sub-task here: which LLM should I use and how do I run it (as a suitable web service)?
+There are two sub-task here: **which LLM should I use** and **how do I run it** (as a suitable web service)?
 
 #### Which LLM to use?
 
 When LLMs first become popular and useful during 2023, they had an aura of being only available as a service through big,
 proprietary vendors. During 2024 and 2025 there was a very fast-paced development in this space. Many vendors came up with
 newer, smarter, faster models. Open weight models that you can freely download and run locally under FOSS licenses appeared,
-and we now have open weight models that beat the original state-of-the-art models from the time Stuart was first released.
+and **we now have open weight models that beat the original state-of-the-art models from the time Stuart was first released**.
 
-At the same time the software to run the models improved, allowing faster inference on machines without a GPU or with less VRAM or RAM.
+At the same time the software to run the models improved, allowing faster inference on machines without a GPU or with
+less VRAM or RAM.
 
-RAG doesn't even need state-of-the-art models anymore. Basically all models are smart enough now for RAG. According to
-our experiments, the quality of the search and the fact newer model can be fed larger context improve the performance
-more than even smarter models.
+RAG doesn't even need state-of-the-art models anymore. Small to mid-range models are smart enough now for RAG.
+According to  our experiments, the quality of the search and the fact newer model can be fed larger contexts improves
+the performance more than model "intelligence".
 
-Here are a few open weight LLMs, that are small enough to run on reasonably sized machines we recommend as of Feb 2026.
+Here are a some open weight LLMs that we tested and can recommend as of Feb 2026. They are small enough
+to run on reasonably sized machines (see the next section) and work well for RAG in English, German and
+Italian.
 
-| LLM               | parameters  | Author                    | License  | recommended VRAM |
-|-------------------|-------------|---------------------------|----------|------------------|
-| Qwen3-30B-A3B     | 30.5b (MOE) | Alibaba (China)           | Apache 2 | 48 GiB           |
-| Mistral Small 3.2 | 24b (dense) | MistralAI (Europe/France) | Apache 2 | 32 GiB           |
-| gpt-oss-20b       | 21b (MOE)   | OpenAI (USA)              | Apache 2 | 16 GiB           |
-
-The given amount of VRAM in this table is somewhat generous, as we expect the LLM is running locally on
-the same machine where Stuart is also running. So, besides the LLM, also the embedding model need to fit into VRAM.
-
-We also assume to have model versions with good quality (i.e. 8 bits per parameter or 4 bits for gpt-oss-20b).
-
-For systems without a GPU expect slower performance. In that case it is probably advisable to use
-gpt-oss-20b. On a headless Linux machine 16 GB of system RAM is enough to run gpt-oss-20b, but gets
-tight when all the other parts of Stuart also need to run on the same system.
+| LLM               | parameters  | Author                    | License  |
+|-------------------|-------------|---------------------------|----------|
+| Qwen3-30B-A3B     | 30.5b (MOE) | Alibaba (China)           | Apache 2 |
+| Mistral Small 3.2 | 24b (dense) | MistralAI (Europe/France) | Apache 2 |
+| gpt-oss-20b       | 21b (MOE)   | OpenAI (USA)              | Apache 2 |
 
 
 #### How to run the LLM?
 
-Earlier versions of Stuart linked to a library to run the LLM inside Stuart. This is not very flexible.
+Earlier versions of Stuart linked to a library to run the LLM inside Stuart. This was not very flexible.
 
 Nowadays most deployments use an external software to run the LLM that exposes the model as a web service:
-the so called OpenAI-compatible chat-completion endpoint. This has become a de facto standard.
-
-You can use any of the popular local software packages to run the LLM!
-
-In the NOI Techpark installation we use [llama.cpp](https://github.com/ggml-org/llama.cpp).
+the so called **OpenAI-compatible chat-completion endpoint**. This has become a de facto standard and
+starting from the current version, Stuart supports. this.
 
 You can also use third-party service providers that offer open-weight models as a service. A popular
 provider is [OpenRouter](https://openrouter.ai/). If you're looking for an EU-based provider, check out
 [Scaleway's Generative APIs service](https://www.scaleway.com/en/generative-apis/).
 
-For a quick experiment, one of the easiest ways to run open weight models locally is [downloading and running
-Ollama](https://ollama.com/download).
+If you use a third-party service, just fill in the endpoint, model name and API key that you obtain
+from your provider, and you're done (file `~/stuart-chatbot/rag/secrets_llm_endpoint.json`).
 
-Once you set that up, you can pull models from Ollama's model repository. The following table lists
-the names of the models in that repository with our recommended quantization (bits per parameter): 
+For a truly independent setup, you can run the models locally!
 
-| LLM               | parameters/quantization | name in Ollama repo                     | download size      | recommended VRAM |
-|-------------------|-------------------------|-----------------------------------------|--------------------|------------------|
-| Qwen3-30B-A3B     | 30.5b (MOE) / 8 bits    | qwen3:30b-a3b-instruct-2507-q8_0        | 32 GiB             | 48 GiB           |
-| Mistral Small 3.2 | 24b (dense) / 8 bits    | mistral-small3.2:24b-instruct-2506-q8_0 | 26 GiB             | 32 GiB           |
-| gpt-oss-20b       | 21b (MOE) / 4 bits      | gpt-oss:20b                             | 14 GiB             | 16 GiB           |
+There are a few popular software packages to run LLM inference. The NOI Techpark installation, for
+example, uses [llama.cpp](https://github.com/ggml-org/llama.cpp).
 
-To pull a model, run `ollama pull` with the model name:
+For a quick experiment, one of the easiest ways to run open weight models locally is
+[downloading and running a software called Ollama](https://ollama.com/download).
+
+Ollama maintains a repository of open weight LLMs. Once you set the software up you can pull models from there.
+The following table lists the recommended models together with the names in Ollama's repository: 
+
+| LLM               | parameters/quantization | name in Ollama repo                     | download size      | recommended VRAM for use with Stuart |
+|-------------------|-------------------------|-----------------------------------------|--------------------|--------------------------------------|
+| Qwen3-30B-A3B     | 30.5b (MOE) / 8 bits    | qwen3:30b-a3b-instruct-2507-q8_0        | 32 GiB             | 48 GiB                               |
+| Mistral Small 3.2 | 24b (dense) / 8 bits    | mistral-small3.2:24b-instruct-2506-q8_0 | 26 GiB             | 32 GiB                               |
+| gpt-oss-20b       | 21b (MOE) / 4 bits      | gpt-oss:20b                             | 14 GiB             | 16 GiB                               |
+
+The given amount of VRAM in this table is somewhat generous, as we expect the LLM is running locally on
+the same machine where Stuart is also running. So, besides the LLM with the long contexts typically encountered
+when doing RAG, also the embedding model needs to fit into VRAM. We also picked versions with **good quantization
+quality** (i.e. 8 bits per parameter or 4 bits for gpt-oss-20b), which is higher than Ollama's defaults.
+
+> Models _can_ be run on systems **with less VRAM** at the cost of slower performance or **without a GPU** at the cost
+> of much slower performance. If you want to try out Stuart in such situations you're advised to use the smaller gpt-oss-20b.
+> On a headless Linux machine without a GPU, 16 GB of RAM is the minimum to run Stuart RAG, Postgres and LLM inference
+> all together locally, but things get a bit tight. You might want to look at smaller LLMs sacrificing answer quality.
+
+To pull a model, run `ollama pull` with the exact Ollama repo model name from the table above, for example:
 
 ```bash
 ollama pull gpt-oss:20b
@@ -257,7 +254,7 @@ ollama pull gpt-oss:20b
 
 Whatever model provider you choose, remember to update the file `~/stuart-chatbot/rag/secrets_llm_endpoint.json`.
 
-For a locally running Ollama serving gpt-oss-20b, the contents are:
+For a locally running Ollama (the software) serving gpt-oss-20b (the LLM), you would leave the API key empty:
 
 ```json
 {
@@ -267,36 +264,37 @@ For a locally running Ollama serving gpt-oss-20b, the contents are:
 }
 ```
 
-The `api_key` is only needed when a third party service provider is used.
-
+---
 ## Running
 
 ### Preparing and RAGging the documents
 
-Before you can use Stuart to ask questions about your documents, you need to make them available
+Before you can use Stuart for asking questions about your documents, you need to make them available
 as text or Markdown files and save them into one or more directories.
 
-To get you started, there is a directory (`~/stuart-chatbot/data_example`) with 5 suitable files.
-In follow-up sections we will explain how to scrape documents from other sources and/or convert documents from other formats.
+To get you started, there is a directory (`~/stuart-chatbot/data_example`) with 5 suitable example files.
 
-Let's proceed to load the documents in the example directory to be used for RAG.
-To "RAG" the documents means:
+> In a follow-up sections we will explain how to **scrape documents** from other sources. Have a look at the FAQ
+> on how to **convert documents** from other formats into Markdown.
 
+Let's proceed to load the documents in the example directory to be used for RAG. To "RAG" the documents means:
 - read all the files from the given directory
 - chunk them into overlapping chunks of roughly equal size
-- call a sentence embedding model (see [Wikipedia](https://en.wikipedia.org/wiki/Sentence_embedding))
+- call a sentence embedding model (see [Wikipedia for an explanation](https://en.wikipedia.org/wiki/Sentence_embedding))
   to encode meaningful semantic information from each chunk into a point in a high-dimensional vector space
 - store the file name, chunk and vector into Postgres.
 
 That's the job of `~/stuart-chatbot/rag/load.py`.
 
-That script contains a line to load the files:
+That script contains a single line to "RAG" all files in a directory:
 
 ```python
 rag_dir("../data_example", tag="example", chunk_len=5000, overlap_len=500, hard_limit=6000)
 ```
-Feel free to edit the script to add more paths. The parameters indicate the chunk lengths in number
-of characters. Typical values might be in the order of 1000-10000 characters.
+
+Feel free to edit the script and copy the line to add the directories with your documents.
+The parameters indicate the chunk lengths in number of characters. Typical values might be in the order
+of 1000-10000 characters. See the FAQ below for more information on picking good values for `chunk_len`.
 
 Run the script:
 
@@ -325,9 +323,11 @@ Expected output is:
 The run time very much depends on the capabilities of your hardware and the size
 of the document. On a system with a single CPU core and no GPU, sentence embedding the
 documents for the Open Data Hub (~ 20 million characters) might **take a few hours**.
-Luckily, `load.py` **works incrementally**, so that is typically not a problem.
+Luckily, `load.py` **works incrementally** (it will just add new files), so that is
+typically not a problem.
 
-Note that `load.py` never deletes or updates document chunks in the database, it just adds chunks from new files.
+Note that `load.py` **never deletes or updates** document chunks in the database, it just adds
+chunks from new files!
 
 If you want to delete chunks from the database you need to do that using SQL. Again connect
 to Postgre and run a delete query. Here are some examples:
@@ -342,14 +342,13 @@ truncate ragdata; -- delete everything (!)
 
 Run the chatbot:
 
-```text
+```shell
 source ~/stuart-chatbot/.venv/bin/activate
 cd ~/stuart-chatbot/rag
 python query.py
 ```
 
-This will get you into an easy to use endless loop with the chatbot. Here is a sample
-session!
+This will get you into an easy to use endless loop with the chatbot. Here is a sample session:
 
 ```text
 $ python query.py 
@@ -465,62 +464,9 @@ It has been instructed to answer in the language of the question and translates 
 in the text while answering.
 
 
-## Optional: Document Scrapers
+### Running the chatbot as a web application
 
- (TODO: add info about Github issue scraper that was never documented)
-
-Scraping means:
-
-- download the documents,
-- save them as plain text files.
-
-For the Open Data Hub deployment, the document sources are:
-
-- the readme markdown files from the relevant NOI Techpark repositories,
-- the wiki markdown files from the ODH-Docs wiki,
-- the tickets from the ODH Request Tracker installation.
-
-For each category, there is a custom scraper in `scrapers/`.
-
-Two scrapers are specially crafted for the Open Data Hub:
-
-`scrape_readme.sh` scrapes the readme markdown files from the NOI Techpark repositories 
-on GitHub that are relevant to the Open Data Hub. The links are read from a hand-crafted 
-file (`scrape_readme_urls.txt`).
-
-`scrape_wiki.sh` scrapes the wiki markdown files from the [ODH-Docs wiki](https://github.com/noi-techpark/odh-docs/wiki).
-
-Additionally, there is a more generic scraper to scrape tickets from a well
-known ticketing system (Best Practice' Request Tracker): `scrape_rt.py`.
-It scrapes transactions of type 'Ticket created', 'Correspondence added'
-or 'Comments added'. Remember to set up the location and credentials of the
-Request Tracker installation in `scrape_rt.json`! 
-
-The documents are stored in the `~/stuart-chatbot/data_*` directories.
-
-Currently, scraping the readmes and the wiki just takes a few seconds, but 
-**scraping the tickets takes a few hours**. Luckily `scrape_rt.py` works
-incrementally, but it still needs about 20 minutes to check each ticket for
-new transactions.
-
-> The easiest way to run all these scripts is to set up a cronjob that runs
-> `cron/cron-scrape.sh` that will take care of everything.
-
-Stuart is designed to be easily extendable. You can **add scrapers for your own
-documents**. The only requirement is the scrapers output **plain text files** (of any
-dimension).
-
-Again, there is a handy script that can be called from **crontab**: `cron/cron-load.sh`.
-
-
-## Optional: Converting documents to markdown (TODO)
-
-Show an example on how to convert a PDF to Markdown using MarkItDown.
-
-## Optional: Running the chatbot as a web application
-
-Stuart also comes with a web application and a system to queue and process
-multiple conversations concurrently.
+Stuart also comes with a web application and a system to queue and process multiple conversations concurrently.
 
 The files related to this part are under the directory `web/`.
 
@@ -626,3 +572,128 @@ At this point the web interface is ready and will process your questions.
 The session information (including all past questions and answers) is stored in a local
 SQLite database (file stuart.db). It is recreated automatically at startup, if it is not present.
 
+
+---
+## Document scrapers (optional)
+
+TODO: add info about GitHub issue scraper that was never documented
+
+Scraping means:
+
+- download the documents,
+- save them as plain text files.
+
+For the Open Data Hub deployment, the document sources are:
+
+- the readme Markdown files from the relevant NOI Techpark repositories,
+- the wiki Markdown files from the ODH-Docs wiki,
+- the tickets from the ODH Request Tracker installation.
+
+For each category, there is a custom scraper in `scrapers/`.
+
+Two scrapers are specially crafted for the Open Data Hub:
+
+`scrape_readme.sh` scrapes the readme Markdown files from the NOI Techpark repositories 
+on GitHub that are relevant to the Open Data Hub. The links are read from a hand-crafted 
+file (`scrape_readme_urls.txt`).
+
+`scrape_wiki.sh` scrapes the wiki Markdown files from the [ODH-Docs wiki](https://github.com/noi-techpark/odh-docs/wiki).
+
+Additionally, there is a more generic scraper to scrape tickets from a well
+known ticketing system (Best Practice' Request Tracker): `scrape_rt.py`.
+It scrapes transactions of type 'Ticket created', 'Correspondence added'
+or 'Comments added'. Remember to set up the location and credentials of the
+Request Tracker installation in `scrape_rt.json`! 
+
+The documents are stored in the `~/stuart-chatbot/data_*` directories.
+
+Currently, scraping the readmes and the wiki just takes a few seconds, but 
+**scraping the tickets takes a few hours**. Luckily `scrape_rt.py` works
+incrementally, but it still needs about 20 minutes to check each ticket for
+new transactions.
+
+> The easiest way to run all these scripts is to set up a cronjob that runs
+> `cron/cron-scrape.sh` that will take care of everything.
+
+Stuart is designed to be easily extendable. You can **add scrapers for your own
+documents**. The only requirement is the scrapers output **plain text files** (of any
+dimension).
+
+Again, there is a handy script that can be called from **crontab**: `cron/cron-load.sh`.
+
+---
+## FAQ
+
+### What about documents in other formats (.pdf, .docx, etc...)?
+
+TODO
+
+### What about database performance?
+
+As long as you're handling less than, say, hundreds of MB of text, don't worry
+about performance. Search times won't matter much. Embedding the query text and
+prompting the LLM will take most of the time. Once you feel search time increases, 
+you can create an index on the vector column. Connect again to Postgres and
+create and index on the embedding column:
+
+```sql
+CREATE INDEX ragdata_embedding_hnsw_ix ON ragdata
+USING hnsw (embedding vector_cosine_ops);
+```
+
+You just need to do this once, the index will be automatically updated whenever the data changes.
+
+
+### What about chunk length? What about top-N searches?
+
+When "RAG"ging your documents using `~/stuart-chatbot/rag/load.py` what value should be set for the parameter `chunk_len`?
+
+For an LLM to be able to answer questions about your document, it must be fed your document in the prompt behind the scene.
+However, LLMs can't process prompts of unlimited length. Currently, typical maximum context lengths are in the order of a
+few hundred thousand characters. When you interact with a RAG system, the whole conversation (your questions, the answers,
+all (hidden) prompts with extracts from your documents) must fit in that amount of text. There's also a performance issue
+as the longer the prompt, the more compute load is generated.
+
+If this wasn't the case, we could just fit all of your texts into the system prompt and get rid of embedding, searching
+and vector databases altogether!
+
+All that being said, what's the ideal chunk length?
+
+Look at your texts. If you have smaller texts, like wiki pages or knowledge base articles, check their size distribution.
+If all the pages are, say in the range few to 3000 characters, you get the best performance when you extract each page into
+its own file and set the chunk length to 3000. This way, each page will map to one chunk. When you use the system,
+the search will identify the best matching page and the LLM will get the whole page.
+
+If you have 99% of all pages within 3000 characters and just 1% of larger pages, like 100000 characters. Still keep 3000
+and accept that there will be cases where the search will find just chunks of the longer page (hopefully the relevant ones).
+
+If you have huge documents, like PDFs with thousands of pages in a single file (converted to Markdown) spanning millions
+of characters each, try picking a largish chunk length, say, 10000. Increasing chunk length too much will make search less
+precise. There is also a limit in the embedding model. You will get an error if you exceed the limit of 8192 tokens of our
+embedding model (equivalent to about 20000-30000 characters). For these kind of situations the problem often is that a
+question can only be answered after looking at different parts of the large document, and, you cannot increase chunk
+length to accomodate the whole document.
+
+There is also another trick here. Keep the chunk size reasonably small, like  5000-10000 characters, but instead of
+feeding the single top chunk into the LLM, provide the top-N ones.
+
+This can be set in Stuart's query code: `~/stuart-chatbot/rag/query.py` for the command line client or
+`~/stuart-chatbot/rag/backend_query.py` for the webclient backend.
+
+Find this part:
+
+```python
+
+# --- search ---
+
+# use the first top_n results out of top_max retrieved
+# the default is top_n = 1, top_max = 5
+
+top_n = 1
+top_max = 5
+```
+
+and set top_n to some value larger than 1. 
+
+For example, with `top_n = 2`, the LLM will get two different (hopefully relevant) chunks out of a large document
+and might be able to give better answers.
