@@ -18,8 +18,8 @@
     * [Running the chatbot as a web application](#running-the-chatbot-as-a-web-application)
   * [Document scrapers (optional)](#document-scrapers-optional)
   * [FAQ](#faq)
-    * [What about database performance?](#what-about-database-performance)
     * [What about documents in other formats (.pdf, .docx, etc...)?](#what-about-documents-in-other-formats-pdf-docx-etc)
+    * [What about database performance?](#what-about-database-performance)
     * [What about chunk length? What about top-N searches?](#what-about-chunk-length-what-about-top-n-searches)
 <!-- TOC -->
 
@@ -194,15 +194,20 @@ According to  our experiments, the quality of the search and the fact newer mode
 the performance more than model "intelligence".
 
 Here are a some open weight LLMs that we tested and can recommend as of Feb 2026. They are small enough
-to run on reasonably sized machines (see the next section) and work well for RAG in English, German and
-Italian.
+to run on reasonably sized machines (see the next section).
 
 | LLM               | parameters  | Author                    | License  |
 |-------------------|-------------|---------------------------|----------|
-| Qwen3-30B-A3B     | 30.5b (MOE) | Alibaba (China)           | Apache 2 |
 | Mistral Small 3.2 | 24b (dense) | MistralAI (Europe/France) | Apache 2 |
+| Qwen3-VL-30B      | 31b (MOE)   | Alibaba Cloud (China)     | Apache 2 |
 | gpt-oss-20b       | 21b (MOE)   | OpenAI (USA)              | Apache 2 |
+| Qwen3-VL-8b       | 9b (MOE)    | Alibaba Cloud (China)     | Apache 2 |
 
+They all work well for RAG and can digest documents and understand questions in many languages just fine
+(we tested English, German and Italian).
+
+When answering in German or Italian, the most grammatically accurate responses come from Mistral Small 3.2,
+closely followed by both Qwen3-VL models. Expect occasional grammar errors from gpt-oss-20b.
 
 #### How to run the LLM?
 
@@ -230,26 +235,29 @@ For a quick experiment, one of the easiest ways to run open weight models locall
 Ollama maintains a repository of open weight LLMs. Once you set the software up you can pull models from there.
 The following table lists the recommended models together with the names in Ollama's repository: 
 
-| LLM               | parameters/quantization | name in Ollama repo                     | download size      | recommended VRAM for use with Stuart |
-|-------------------|-------------------------|-----------------------------------------|--------------------|--------------------------------------|
-| Qwen3-30B-A3B     | 30.5b (MOE) / 8 bits    | qwen3:30b-a3b-instruct-2507-q8_0        | 32 GiB             | 48 GiB                               |
-| Mistral Small 3.2 | 24b (dense) / 8 bits    | mistral-small3.2:24b-instruct-2506-q8_0 | 26 GiB             | 32 GiB                               |
-| gpt-oss-20b       | 21b (MOE) / 4 bits      | gpt-oss:20b                             | 14 GiB             | 16 GiB                               |
+| LLM               | parameters/quantization | name in Ollama repo                     | download size | GPU VRAM when used with Stuart |
+|-------------------|-------------------------|-----------------------------------------|---------------|--------------------------------|
+| Mistral Small 3.2 | 24b (dense) / 8 bits    | mistral-small3.2:24b-instruct-2506-q8_0 | 26 GiB        | ~ 30 GiB                       |
+| Qwen3-VL-30B      | 31b (MOE) / 4 bits      | qwen3-vl:30b                            | 20 GiB        | ~ 24 GiB                       |
+| gpt-oss-20b       | 21b (MOE) / 4 bits      | gpt-oss:20b                             | 14 GiB        | ~ 16 GiB                       |
+| Qwen3-VL-8b       | 9b (MOE) / 4 bits       | qwen3-vl:8b                             | 6.1 GiB       | ~ 11 GiB                       | 
 
-The given amount of VRAM in this table is somewhat generous, as we expect the LLM is running locally on
+You will get the best performance on a system with a **GPU** that has at least the amount of **VRAM** given in the last column.
+
+The VRAM estimates might seem somewhat generous. Take into account we expect the LLM is running locally on
 the same machine where Stuart is also running. So, besides the LLM with the long contexts typically encountered
-when doing RAG, also the embedding model needs to fit into VRAM. We also picked versions with **good quantization
-quality** (i.e. 8 bits per parameter or 4 bits for gpt-oss-20b), which is higher than Ollama's defaults.
+when doing RAG, also the embedding model should fit into VRAM. Furthermore, for Mistral Small 3.2, we picked
+versions with better quantization quality (i.e. 8 bits), higher than Ollama's defaults.
 
-> Models _can_ be run on systems **with less VRAM** at the cost of slower performance or **without a GPU** at the cost
-> of much slower performance. If you want to try out Stuart in such situations you're advised to use the smaller gpt-oss-20b.
-> On a headless Linux machine without a GPU, 16 GB of RAM is the minimum to run Stuart RAG, Postgres and LLM inference
-> all together locally, but things get a bit tight. You might want to look at smaller LLMs sacrificing answer quality.
+> Models _can_ be run on systems with less VRAM at the cost of slower performance or **without a GPU** at the cost
+> of much slower performance. If you want to try out Stuart in such situations you're advised to use the smallest model
+> (Qwen3-VL-8b). On a Linux machine without a GPU, 16 GB of RAM is then enough to run Stuart RAG, Postgres and LLM inference
+> all together locally.
 
 To pull a model, run `ollama pull` with the exact Ollama repo model name from the table above, for example:
 
 ```bash
-ollama pull gpt-oss:20b
+ollama pull mistral-small3.2:24b-instruct-2506-q8_0
 ```
 
 Whatever model provider you choose, remember to update the file `~/stuart-chatbot/rag/secrets_llm_endpoint.json`.
@@ -259,7 +267,7 @@ For a locally running Ollama (the software) serving gpt-oss-20b (the LLM), you w
 ```json
 {
   "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
-  "model": "gpt-oss:20b",
+  "model": "gmistral-small3.2:24b-instruct-2506-q8_0",
   "api_key": ""
 }
 ```
@@ -340,7 +348,7 @@ truncate ragdata; -- delete everything (!)
 
 ### Running the chatbot on the command line
 
-Run the chatbot:
+Run the RAG chatbot:
 
 ```shell
 source ~/stuart-chatbot/.venv/bin/activate
@@ -350,127 +358,138 @@ python query.py
 
 This will get you into an easy to use endless loop with the chatbot. Here is a sample session:
 
+---
+
 ```text
 $ python query.py 
 Stuart: You rang 🛎️ ?
 Ask me anything or enter 'q' to exit. Enter 'r' to restart our conversation.
-> What does gulp do?
-{meta}
-{meta} embedding vector search - top 5 chunks:
-{meta} distance   tag  offset  file_name
-{meta} --------   ---  ------  ---------
-{meta} 0.36183 example       0  readme-about-imaginary-project.md <-- will be added to context
-{meta} 0.62200 example       0  planets.txt
-{meta} 0.67645 example       0  the-colony-on-xyris-9.txt
-{meta} 0.68689 example       0  a-detective-story.md
-{meta} 0.69902 example       0  eli-the-elephant.txt
-{meta} please wait...
-{meta} LLM output in  2.406s
-{meta}
-Gulp is a lightweight container orchestration engine that helps developers and DevOps teams deploy, manage, and scale containerized applications across cloud, bare‑metal, or edge environments. It provides dynamic scheduling, multi‑tenant isolation, auto‑scaling, immutable deployments, and built‑in observability to run container workloads efficiently and reliably.
-> How do I install it?      
-{meta}
-{meta} embedding vector search - top 5 chunks:
-{meta} distance   tag  offset  file_name
-{meta} --------   ---  ------  ---------
-{meta} 0.15713 example       0  readme-about-imaginary-project.md <-- will be added to context
-{meta} 0.60331 example       0  planets.txt
-{meta} 0.61157 example       0  the-colony-on-xyris-9.txt
-{meta} 0.69188 example       0  a-detective-story.md
-{meta} 0.70163 example       0  eli-the-elephant.txt
-{meta} please wait...
-{meta} LLM output in  1.862s
-{meta}
-**From source**
-
-'''bash
-git clone https://github.com/gulp/gulp.git
-cd gulp
-make build
-'''
-
-**With Docker**
-
-'''bash
-docker pull ghcr.io/gulp/gulp:latest
-'''
-
-After building or pulling, you can initialize a cluster with:
-
-'''bash
-gulp init --nodes 3
-'''
 ```
+```text
+> Che nome ha il robot che deve proteggere la colonia spaziale?
+```
+```text
+{meta}
+{meta} embedding vector search - top 5 chunks:
+{meta} distance   tag  offset  file_name
+{meta} --------   ---  ------  ---------
+{meta} 0.52625 example       0  the-colony-on-xyris-9.txt <-- will be added to context
+{meta} 0.61479 example       0  a-detective-story.md
+{meta} 0.62225 example       0  readme-about-imaginary-project.md
+{meta} 0.65012 example       0  planets.txt
+{meta} 0.69569 example       0  eli-the-elephant.txt
+{meta} please wait...
+{meta} LLM output in  0.641s
+{meta}
+```
+```text
+Il robot che deve proteggere la colonia spaziale si chiama K-7X.
+```
+```text
+> Che direttiva ha?
+```
+```text
+{meta}
+{meta} embedding vector search - top 5 chunks:
+{meta} distance   tag  offset  file_name
+{meta} --------   ---  ------  ---------
+{meta} 0.38186 example       0  the-colony-on-xyris-9.txt <-- will be added to context
+{meta} 0.62792 example       0  a-detective-story.md
+{meta} 0.63127 example       0  readme-about-imaginary-project.md
+{meta} 0.64229 example       0  planets.txt
+{meta} 0.71697 example       0  eli-the-elephant.txt
+{meta} please wait...
+{meta} LLM output in  1.363s
+{meta}
+```
+```text
+La direttiva di K-7X è semplice: proteggere la colonia. Ma in seguito scopre che il suo compito è: preservare la vita umana.
+```
+
+---
 
 Let's break down the parts
 
-1. The user asks "What does gulp do?"
+1. The user asks in Italian: **Che nome ha il robot che deve proteggere la colonia spaziale?**
+   (What's the name of the robot that must protect the space colony?).
 
 2. This piece of text is embedded and transformed into a vector. A query is run to find
    the closest vector stored in PostgreSQL and the top-5 matches are shown (lines starting 
    with `{meta}` are debug output). The best match is actually the right document: it's
-   the file `data_example/readme-about-imaginary-project.md` about an imaginary software tool
-   called _gulp_.
+   the file `data_example/the-colony-on-xyris-9.txt` that contains a science fiction short story.
 
 3. The code proceeds to build a prompt using the original question and the chunk from
-   the document and inputs into the LLM.
+   the document and inputs it into the LLM.
 
-4. The LLM answers correctly, based on our (nonsense) document.
+4. The LLM answers correctly, based on our document, keeping the conversation in Italian:
+   **Il robot che deve proteggere la colonia spaziale si chiama K-7X.**
+   (The robot that must protect the space colony is called K-7X.)
 
-5. The user asks a follow-up question "How do I install it?"
+5. The user asks a follow-up question: **Che direttiva ha?**
+   (What is its directive?)
 
-6. Now the LLMs answer plus the new question is again embedded and searched for (leading
+6. Now the LLMs previous answer plus the new question is again embedded and searched for (leading
    to the same document found as best match).
 
-7. A new prompt is built using the follow-up question and the same chunk and input again to the LLM.
+7. A new prompt is built using the follow-up question and the same chunk and input again into the LLM.
 
-8. The LLMs answers with the correct information.
+8. The LLMs answers with the correct information: **La direttiva di K-7X è semplice: proteggere la colonia. 
+   Ma in seguito scopre che il suo compito è: preservare la vita umana.**
+   (The directive of K-7X is simple: protect the colony. But later, it discovers that its task is: preserve human life.)
 
-> It is important to point out, that LLMs - as is well known - tend to hallucinate. So any
-> information should be double-checked!
+> Pause a moment to think about how powerful semantic search is! We use a multi-language
+> embedding model, so language doesn't matter anymore. The search will find texts that are
+> close to the _meaning_ of the question, regardless the language. Here, the Italian words of the question 
+> do not appear in the English short story (not even "robot"), still the search finds the right text.
 
+Here are some questions and follow-up questions you can try on the example data in different languages:
 
-Pause a moment to think about how powerful this semantic search is! We use a multi-language
-embedding model, so language doesn't matter anymore. The search will find texts that are
-close to the _meaning_ of the question, regardless the language.
+- What does gulp do? How do you install it?
+- Wie heisst der blaue Elefant? Wem hat er geholfen?
+- Che nome ha il robot che deve proteggere la colonia spaziale? Che direttiva ha?
+- Name the planets in the solar system! What's Factulus' moon called?
+- What's the name of the cat?
 
-Here is the result of a search that finds an English text from a German question:
+Note how the chatbot is instructed to follow the information it gets from the retrival fase:
 
-``` text
-> Wie heisst der Elefant?
-{meta}
-{meta} embedding vector search - top 5 chunks:
-{meta} distance   tag  offset  file_name
-{meta} --------   ---  ------  ---------
-{meta} 0.40835 example       0  eli-the-elephant.txt <-- will be added to context
-{meta} 0.56760 example       0  a-detective-story.md
-{meta} 0.66857 example       0  the-colony-on-xyris-9.txt
-{meta} 0.68387 example       0  planets.txt
-{meta} 0.71171 example       0  readme-about-imaginary-project.md
+```text
+Q: Name the planets in the solar system!
+
+A: Based on the context provided, here are the planets in the solar system:
+
+- Mercury
+- Venus
+- Earth
+- Mars
+- Jupiter
+- Saturn
+- Factulus
+- Uranus
+- Neptune
 ```
 
-The chat then proceeds:
+As you probably know, there is no planet _Factulus_. We've put that one into `data_example/planets.txt` to test
+the chatbots capability to answer questions based only on the RAG prompt and ignore its pretrained knowledge!
 
+Also note how the LLM is instructed to admit it doesn't know when the information is just not there (there is no cat in the examples).
+
+```text
+Q: What's the name of the cat?
+
+A: I don't know.
 ```
-> Wie heisst der Elefant?
-Der Elefant heißt Eli.
 
-> Wem half er?
-Er half einer kleinen Füchsin.
-```
-
-This works perfectly well even though the LLMs sees the original English text in its prompt.
-It has been instructed to answer in the language of the question and translates the information
-in the text while answering.
+> **Note: when you want to ask a new, different question, do not forget to enter "r" to reset the context!** Otherwise, the previous answer
+> will be added in the search. This will likely result in the wrong document being found.
 
 
 ### Running the chatbot as a web application
 
 Stuart also comes with a web application and a system to queue and process multiple conversations concurrently.
 
-The files related to this part are under the directory `web/`.
+The files related to this part are under the directory `~/stuart-chatbot/web/`.
 
-Before running for the first time, edit `backend.json`:
+Before running for the first time, edit the file `backend.json` there:
 
 ```JSON
 {
@@ -493,12 +512,11 @@ itself against the web application to be allowed to process jobs. Put some hard 
 there.
 
 To just run the application in the virtual Python environment already prepared for the
-rest of Stuart:
+rest of Stuart perform these steps:
 
 ```text
-cd ~/stuart-chatbot
-source .venv/bin/activate
-cd web/
+source ~/stuart-chatbot/.venv/bin/activate
+cd ~/stuart-chatbot/web/
 pip install -r requirements.txt  # note this adds Flask
 python backend.py
 ```
@@ -511,8 +529,7 @@ Remember to set the value of `bind_ip` in `web/backend.json` to `0.0.0.0` and pr
 the Docker image:
 
 ```text
-cd ~/stuart-chatbot
-cd web/
+cd ~/stuart-chatbot/web/
 docker build -t stuart-web .
 ```
 
@@ -532,12 +549,11 @@ and you can insert a question that will be queued:
 ![README-screen03.png](README-screen03.png)
 
 However, nobody is yet processing the queue! So the question stays in the "question queued" state
-indefinitely. We need to go back to the directory, where the command line application lives:
+indefinitely. We need to go back to the directory `~/stuart-chatbot/rag/`, where the chatbot command line application lives:
 
 ```text
-cd ~/stuart-chatbot/
-source .venv/bin/activate
-cd rag/
+source ~/stuart-chatbot/.venv/bin/activate
+cd ~/stuart-chatbot/rag/
 ```
 
 In this directory, there is another `backend.json`. Edit it to point to the URL of the web application and set
@@ -553,9 +569,8 @@ the value of `preshared_secret` to the same string as above.
 Then start these two tasks:
 
 ```text
-cd ~/stuart-chatbot/
-source .venv/bin/activate
-cd rag/
+source ~/stuart-chatbot/.venv/bin/activate
+cd ~/stuart-chatbot/rag/
 python backend_query.py
 python backend_heartbeat.py
 ```
@@ -572,11 +587,11 @@ At this point the web interface is ready and will process your questions.
 The session information (including all past questions and answers) is stored in a local
 SQLite database (file stuart.db). It is recreated automatically at startup, if it is not present.
 
+> The files `docker-compose.yml`, `.env.example` and the directory `infrastructure` are specific
+> to the deployment at NOI Techpark.
 
 ---
 ## Document scrapers (optional)
-
-TODO: add info about GitHub issue scraper that was never documented
 
 Scraping means:
 
@@ -585,35 +600,39 @@ Scraping means:
 
 For the Open Data Hub deployment, the document sources are:
 
+- the GitHub issues from the relevant NOI Techpark repositories,
 - the readme Markdown files from the relevant NOI Techpark repositories,
-- the wiki Markdown files from the ODH-Docs wiki,
-- the tickets from the ODH Request Tracker installation.
+- the tickets from the Open Data Hub Request Tracker installation.
+- the wiki Markdown files from the Open Data Hub Docs wiki,
 
-For each category, there is a custom scraper in `scrapers/`.
+For each category, there is a custom scraper in `~/stuart-chatbot/scrapers/`.
+The scrapers are specially crafted for the Open Data Hub:
 
-Two scrapers are specially crafted for the Open Data Hub:
+`scrape_ghissues.py` scrapes the GitHub issues from all repositories of the
+Open Data Hub GitHub account configured in `secrets_gh.json`.
 
 `scrape_readme.sh` scrapes the readme Markdown files from the NOI Techpark repositories 
 on GitHub that are relevant to the Open Data Hub. The links are read from a hand-crafted 
 file (`scrape_readme_urls.txt`).
 
-`scrape_wiki.sh` scrapes the wiki Markdown files from the [ODH-Docs wiki](https://github.com/noi-techpark/odh-docs/wiki).
-
-Additionally, there is a more generic scraper to scrape tickets from a well
-known ticketing system (Best Practice' Request Tracker): `scrape_rt.py`.
+`scrape_rt.py` scrapes tickets from a well known ticketing system (Best Practice' Request Tracker)
+in use at the Open Data Hub.
 It scrapes transactions of type 'Ticket created', 'Correspondence added'
 or 'Comments added'. Remember to set up the location and credentials of the
 Request Tracker installation in `scrape_rt.json`! 
+
+`scrape_wiki.sh` scrapes the wiki Markdown files from the [ODH-Docs wiki](https://github.com/noi-techpark/odh-docs/wiki).
 
 The documents are stored in the `~/stuart-chatbot/data_*` directories.
 
 Currently, scraping the readmes and the wiki just takes a few seconds, but 
 **scraping the tickets takes a few hours**. Luckily `scrape_rt.py` works
 incrementally, but it still needs about 20 minutes to check each ticket for
-new transactions.
+new transactions. Scraping the GitHub issues, also is incremental, but is
+slow due to the necessary rate limiting imposed by GitHub.
 
 > The easiest way to run all these scripts is to set up a cronjob that runs
-> `cron/cron-scrape.sh` that will take care of everything.
+> `cron/cron-scrape.sh` and `cron/cron-scrape-gh-issues.sh` that will take care of everything.
 
 Stuart is designed to be easily extendable. You can **add scrapers for your own
 documents**. The only requirement is the scrapers output **plain text files** (of any
@@ -626,7 +645,86 @@ Again, there is a handy script that can be called from **crontab**: `cron/cron-l
 
 ### What about documents in other formats (.pdf, .docx, etc...)?
 
-TODO
+To "RAG" documents for Stuart, the documents need to be saved as **plain text** (`.txt`) or **Markdown** (`.md`) files into
+one or more directories.
+
+Other documents can be converted into Markdown, for example with the toolset [**MarkItDown**](https://github.com/microsoft/markitdown).
+
+You can install MarkItDown into your existing RAG virtual environment:
+
+```shell
+source ~/stuart-chatbot/.venv/bin/activate
+cd ~/stuart-chatbot/rag/
+pip install 'markitdown[all]'
+```
+
+Let's download a PDF manual (`odh.pdf`), convert it to Markdown (`odh.md`) and store it into a directory `testdocs/`:
+
+```shell
+curl -o odh.pdf https://opendatahub.readthedocs.io/_/downloads/en/latest/pdf/
+markitdown odh.pdf > odh.md
+mkdir testdocs
+mv odh.md testdocs/
+````
+
+Now, edit `~/stuart-chatbot/rag/load.py` with line to load the file from `testdocs/`:
+
+```Python
+rag_dir("testdocs", tag="odh-manual", chunk_len=10000, overlap_len=500, hard_limit=11000)
+```
+
+and RAG the file:
+
+```shell
+source ~/stuart-chatbot/.venv/bin/activate
+cd ~/stuart-chatbot/rag/
+python load.py
+```
+
+The expected output is:
+
+```text
+1/1 new files, 8 new chunks, chunked in 0.001s, embedded in 1.425s, stored in 0.066s
+```
+
+That means one new file was found in `testdocs/`, it was split into 8 chunks, each was embedded and loaded into Postgres.
+
+Great! Now let's ask an obscure detail from that document:
+
+```text
+$ python query.py 
+Stuart: You rang 🛎️ ?
+Ask me anything or enter 'q' to exit. Enter 'r' to restart our conversation.
+```
+```text
+> I'm querying the Open Data Hub. I'm using a WHERE clause in the URL like this: where=a.eq.5.
+  However, now I want to add an and-condition to filter a second parameter. How do I do that?
+```
+```text
+{meta}
+{meta} embedding vector search - top 5 chunks:
+{meta} distance   tag  offset  file_name
+{meta} --------   ---  ------  ---------
+{meta} 0.43727 odh-manual   39899  odh.md <-- will be added to context
+{meta} 0.45549 odh-manual   49978  odh.md
+{meta} 0.48636 odh-manual   19860  odh.md
+{meta} 0.48812 odh-manual       0  odh.md
+{meta} 0.49266 odh-manual    9996  odh.md
+{meta} please wait...
+{meta} LLM output in  3.334s
+{meta}
+```
+```text
+To add an and-condition to filter a second parameter in your WHERE clause for the Open Data Hub query, you can use the following format:
+
+where=a.eq.5,b.eq.value
+
+Replace "value" with the value you want to filter the second parameter by. The comma (,) acts as an implicit AND operator, so both conditions must be true for the records to be included in the response.
+```
+
+As you can see, the search found the chunk from the file starting at offset 39899. That's the text starting a bit before "Advanced Data Processing"
+on page 18. That's exactly where this topic is discussed! The LLM used that information to answer the question.
+
 
 ### What about database performance?
 
