@@ -489,28 +489,6 @@ Stuart also comes with a web application and a system to queue and process multi
 
 The files related to this part are under the directory `~/stuart-chatbot/web/`.
 
-Before running for the first time, edit the file `backend.json` there:
-
-```JSON
-{
-  "bind_ip": "127.0.0.1",
-  "bind_port": "9001",
-  "preshared_secret": "**********"
-}
-```
-
-If you need to be able to connect via network instead of 127.0.0.1 (localhost), the value of `bind_ip`
-should be changed to `0.0.0.0` (or any IP address you want).
-
-**Please be aware that this opens up the web application to any users that may connect via
-your configured network. There is no built-in authentication for users of the web interface.
-Anybody who has access to the web application can open a session to input prompts and get
-the answers.**
-
-The value of `preshared_secret` is a secret string used by the inference backend to authenticate
-itself against the web application to be allowed to process jobs. Put some hard to guess string
-there.
-
 To just run the application in the virtual Python environment already prepared for the
 rest of Stuart perform these steps:
 
@@ -518,15 +496,30 @@ rest of Stuart perform these steps:
 source ~/stuart-chatbot/.venv/bin/activate
 cd ~/stuart-chatbot/web/
 pip install -r requirements.txt  # note this adds Flask
+export PRESHARED_SECRET="**********"
+export BIND_IP=127.0.0.1
+export BIND_PORT=9001
 python backend.py
 ```
+
+If you need to be able to connect via network instead of 127.0.0.1 (localhost), the value of `BIND_IP`
+should be changed to `0.0.0.0` (or any IP address you want).
+
+**Please be aware that this opens up the web application to any users that may connect via
+your configured network. There is no built-in authentication for users of the web interface.
+Anybody who has access to the web application can open a session to input prompts and get
+the answers.**
+
+The value of `PRESHARED_SECRET` is a secret string used by the inference backend to authenticate
+itself against the web application to be allowed to process jobs. Put some hard to guess string
+there.
+
 
 Alternatively, you can run the application in a container with the provided Dockerfile.
 The Docker host can be an independent server, there's no need to have the other Stuart components
 installed. You don't need the Python environment or even Python at all on that host.
 
-Remember to set the value of `bind_ip` in `web/backend.json` to `0.0.0.0` and proceed to build
-the Docker image:
+Proceed to build the Docker image:
 
 ```text
 cd ~/stuart-chatbot/web/
@@ -536,17 +529,18 @@ docker build -t stuart-web .
 Then run the new image:
 
 ```text
-docker run -p 127.0.0.1:8080:9001 stuart-web
+docker run -e PRESHARED_SECRET="**********" -e BIND_IP=0.0.0.0 -e BIND_PORT=9001 -p 127.0.0.1:8080:9001 stuart-web
 ```
 
-Again, take care on where exactly you map the HTTP endpoint. With the `-p` parameter given
-here, the application becomes visible on the host at `http://127.0.0.1:8080`. Change the value
-according to what you need.
+Again, take care on where exactly you map the HTTP endpoint. With the value `BIND_IP=0.0.0.0` the application
+listens to all IPs _inside the container_. Then, with the `-p` parameter given here, the application becomes
+visible on the _host_ at `http://127.0.0.1:8080` (localhost only). Change the value for `-p` according to what you
+need, but, again, **pay attention** to not expose the web application to untrusted networks.
 
 At this point the web application is ready. If you connect, a new session will be created,
 and you can insert a question that will be queued:
 
-![README-screen03.png](README-screen03.png)
+![README-screen02.png](README-screen02.png)
 
 However, nobody is yet processing the queue! So the question stays in the "question queued" state
 indefinitely. We need to go back to the directory `~/stuart-chatbot/rag/`, where the chatbot command line application lives:
@@ -556,7 +550,7 @@ source ~/stuart-chatbot/.venv/bin/activate
 cd ~/stuart-chatbot/rag/
 ```
 
-In this directory, there is another `backend.json`. Edit it to point to the URL of the web application and set
+In this directory, there is a file called `backend.json`. Edit it to point to the URL of the web application and set
 the value of `preshared_secret` to the same string as above.
 
 ```JSON
@@ -584,8 +578,10 @@ indicator of the web interface).
 
 At this point the web interface is ready and will process your questions.
 
+![README-screen03.png](README-screen03.png)
+
 The session information (including all past questions and answers) is stored in a local
-SQLite database (file stuart.db). It is recreated automatically at startup, if it is not present.
+SQLite database (file `db/stuart.db`). It is recreated automatically at startup, if it is not present.
 
 > The files `docker-compose.yml`, `.env.example` and the directory `infrastructure` are specific
 > to the deployment at NOI Techpark.
