@@ -246,8 +246,8 @@ You will get the best performance on a system with a **GPU** that has at least t
 
 The VRAM estimates might seem somewhat generous. Take into account we expect the LLM is running locally on
 the same machine where Stuart is also running. So, besides the LLM with the long contexts typically encountered
-when doing RAG, also the embedding model should fit into VRAM. Furthermore, for Mistral Small 3.2, we picked
-versions with better quantization quality (i.e. 8 bits), higher than Ollama's defaults.
+when doing RAG, also the embedding model should fit into VRAM. Furthermore, for Mistral Small 3.2, we picked a
+version with better quantization quality (i.e. 8 bits), higher than Ollama's defaults.
 
 > Models _can_ be run on systems with less VRAM at the cost of slower performance or **without a GPU** at the cost
 > of much slower performance. If you want to try out Stuart in such situations you're advised to use the smallest model
@@ -262,12 +262,12 @@ ollama pull mistral-small3.2:24b-instruct-2506-q8_0
 
 Whatever model provider you choose, remember to update the file `~/stuart-chatbot/rag/secrets_llm_endpoint.json`.
 
-For a locally running Ollama (the software) serving gpt-oss-20b (the LLM), you would leave the API key empty:
+For a locally running Ollama (the software) serving Mistral Small 3.2 (the LLM), you would leave the API key empty:
 
 ```json
 {
   "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
-  "model": "gmistral-small3.2:24b-instruct-2506-q8_0",
+  "model": "mistral-small3.2:24b-instruct-2506-q8_0",
   "api_key": ""
 }
 ```
@@ -329,7 +329,7 @@ Expected output is:
 ```
 
 The run time very much depends on the capabilities of your hardware and the size
-of the document. On a system with a single CPU core and no GPU, sentence embedding the
+of the documents. On a system with a single CPU core and no GPU, sentence embedding the
 documents for the Open Data Hub (~ 20 million characters) might **take a few hours**.
 Luckily, `load.py` **works incrementally** (it will just add new files), so that is
 typically not a problem.
@@ -337,8 +337,8 @@ typically not a problem.
 Note that `load.py` **never deletes or updates** document chunks in the database, it just adds
 chunks from new files!
 
-If you want to delete chunks from the database you need to do that using SQL. Again connect
-to Postgre and run a delete query. Here are some examples:
+If you want to delete chunks from the database you need to use SQL. Again connect
+to Postgres and run a delete query. Here are some examples:
 
 ```SQL
 delete from ragdata where tag = 'example'; -- delete chunks with a given tag (files from the same directory have the same tag)
@@ -408,7 +408,7 @@ La direttiva di K-7X è semplice: proteggere la colonia. Ma in seguito scopre ch
 
 ---
 
-Let's break down the parts
+Let's break down the parts:
 
 1. The user asks in Italian: **Che nome ha il robot che deve proteggere la colonia spaziale?**
    (What's the name of the robot that must protect the space colony?).
@@ -471,7 +471,7 @@ A: Based on the context provided, here are the planets in the solar system:
 As you probably know, there is no planet _Factulus_. We've put that one into `data_example/planets.txt` to test
 the chatbots capability to answer questions based only on the RAG prompt and ignore its pretrained knowledge!
 
-Also note how the LLM is instructed to admit it doesn't know when the information is just not there (there is no cat in the examples).
+Also note how the LLM is instructed to admit it doesn't know when the information is just not there (there is no cat in the examples):
 
 ```text
 Q: What's the name of the cat?
@@ -635,10 +635,10 @@ slow due to the necessary rate limiting imposed by GitHub.
 > `cron/cron-scrape.sh` and `cron/cron-scrape-gh-issues.sh` that will take care of everything.
 
 Stuart is designed to be easily extendable. You can **add scrapers for your own
-documents**. The only requirement is the scrapers output **plain text files** (of any
-dimension).
+documents**. The only requirement is the scrapers output plain text files or Markdown files
+(of any size).
 
-Again, there is a handy script that can be called from **crontab**: `cron/cron-load.sh`.
+There is a handy script that can be called from **crontab**: `cron/cron-load.sh`.
 
 ---
 ## FAQ
