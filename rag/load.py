@@ -10,14 +10,16 @@
 # .md with a tool such as MarkItDown.
 #
 # As distributed, this will just read files from ../data_example. For the deployment
-# at NOI Techpark, we use ../data_ghissues, ../data_readme, ../data_rt, ../data_readme
-# and ../data_wiki .
+# at NOI Techpark, we use ../data_ghissues, ../data_readme, ../data_rt, and 
+# ../data_wiki.
 #
 # Notes:
 #   - see get_embedding_model() in 'librag.py' to see what embedding model is used
 #   - Postgres location and credentials are read from 'secrets_pg.json'
-#   - the script expects the ragdata table to have been loaded into Postgres (see 'schema.sql')
-#   - the script is incremental, it will skip files that are already present
+#   - the script expects the ragdata table to have been loaded into Postgres
+#     (see global README.md)
+#   - the script is incremental, it will skip files that are already present in
+#     the database
 # ------------------------------------------------------------------------------
 
 from librag import *

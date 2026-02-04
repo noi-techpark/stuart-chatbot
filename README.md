@@ -658,7 +658,8 @@ cd ~/stuart-chatbot/rag/
 pip install 'markitdown[all]'
 ```
 
-Let's download a PDF manual (`odh.pdf`), convert it to Markdown (`odh.md`) and store it into a directory `testdocs/`:
+Let's download the [Open Data Hub PDF manual](https://opendatahub.readthedocs.io/_/downloads/en/latest/pdf/) to `odh.pdf`,
+convert it to a Markdown file `odh.md` and store it into a directory `testdocs/`:
 
 ```shell
 curl -o odh.pdf https://opendatahub.readthedocs.io/_/downloads/en/latest/pdf/
@@ -667,7 +668,7 @@ mkdir testdocs
 mv odh.md testdocs/
 ````
 
-Now, edit `~/stuart-chatbot/rag/load.py` with line to load the file from `testdocs/`:
+Now, edit `~/stuart-chatbot/rag/load.py`, adding a line to load the file from `testdocs/`:
 
 ```Python
 rag_dir("testdocs", tag="odh-manual", chunk_len=10000, overlap_len=500, hard_limit=11000)
@@ -781,7 +782,6 @@ This can be set in Stuart's query code: `~/stuart-chatbot/rag/query.py` for the 
 Find this part:
 
 ```python
-
 # --- search ---
 
 # use the first top_n results out of top_max retrieved
@@ -791,7 +791,7 @@ top_n = 1
 top_max = 5
 ```
 
-and set top_n to some value larger than 1. 
+and set `top_n` to some value larger than 1. 
 
 For example, with `top_n = 2`, the LLM will get two different (hopefully relevant) chunks out of a large document
 and might be able to give better answers.

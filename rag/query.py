@@ -23,18 +23,18 @@
 #   - for inference, whatever model you configured in `secrets_llm_endpoint.json`
 #     is used (see the global README.md for recommendations)
 #
-# If you have loaded the documents from ../data_examples, here are some questions you cn try:
-#
+# If you have loaded the documents from ../data_examples, here is an example
+# question you can try:
+# 
 #   What does gulp do?
-#     # -> [explains some bogus software]
-#   Wie heisst der blaue Elefant?
-#     # -> Eli
-#   Conosci un racconto di fantascienza? Di cosa parla?
-#     # -> [talks about the-colony-on-xyris-9.txt]
-#   Name the planets in the solar system!
-#     # -> [there is a fictive planet named Fractulus...]
-#   What's the name of the cat?
-#     # -> [there is nothing about a cat, so it will say it doesn't know...]
+#
+# Try to follow-up:
+#
+#   How do you install it?
+#
+# Remember to enter "r" to reset the context, when you want to chat about
+# something else.
+#
 # ------------------------------------------------------------------------------
 
 import time
