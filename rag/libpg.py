@@ -28,6 +28,7 @@ def open_cursor() -> psycopg2.extras.DictCursor:
                                     conn_parameters["password"],
                                     conn_parameters["connect_timeout"]
                                 ))
+        conn.set_client_encoding('UTF8')
     except psycopg2.OperationalError as e:
         print("ERROR: open_cursor(): cannot open database connection:\n%s" % str(e))
         sys.exit(1)
