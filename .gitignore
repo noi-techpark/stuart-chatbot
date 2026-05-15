@@ -10,3 +10,5 @@ log_ghissues/*.txt
 .venv
 
 .env
+
+__pycache__/

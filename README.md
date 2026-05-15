@@ -16,6 +16,10 @@
     * [Preparing and RAGging the documents](#preparing-and-ragging-the-documents)
     * [Running the chatbot on the command line](#running-the-chatbot-on-the-command-line)
     * [Running the chatbot as a web application](#running-the-chatbot-as-a-web-application)
+  * [Running with Docker](#running-with-docker)
+    * [Quick start](#quick-start)
+    * [Adding documents](#adding-documents)
+    * [CLI query inside Docker](#cli-query-inside-docker)
   * [Document scrapers (optional)](#document-scrapers-optional)
   * [FAQ](#faq)
     * [What about documents in other formats (.pdf, .docx, etc...)?](#what-about-documents-in-other-formats-pdf-docx-etc)
@@ -25,6 +29,7 @@
 
 **Changelog of this document**
 
+- 2026-05-15 added Docker section
 - 2026-02-01 updated for the major revision
 - 2024-07-07 expanded to include information about the new web frontend and add a few recommendations for custom deployments
 - 2024-03-27 added note about llama-cpp-python compile options
@@ -585,6 +590,133 @@ SQLite database (file `db/stuart.db`). It is recreated automatically at startup,
 
 > The files `docker-compose.yml`, `.env.example` and the directory `infrastructure` are specific
 > to the deployment at NOI Techpark.
+
+---
+## Running with Docker
+
+The repository ships with a `docker-compose.yml` that brings up all required services in one command:
+
+| Service | Description |
+|---------|-------------|
+| `postgres` | PostgreSQL with the pgvector extension (schema created automatically) |
+| `web` | Flask web frontend (Stuart UI) |
+| `rag` | Inference worker — polls the web frontend, runs embedding search and calls the LLM |
+| `rag-loader` | One-shot document loader, run on demand via a Docker Compose profile |
+
+> The `rag` image bakes the [bge-m3](https://huggingface.co/BAAI/bge-m3) embedding model (~2.2 GiB) into the image
+> at build time, so **no network download happens at container startup**. The first build will therefore take longer
+> and produce a ~10 GiB image.
+
+### Quick start
+
+**1. Clone the repository and create your `.env` file:**
+
+```shell
+git clone https://github.com/noi-techpark/stuart-chatbot
+cd stuart-chatbot
+cp .env.example .env
+```
+
+Open `.env` and fill in the required values:
+
+```shell
+# A secret string shared between the web frontend and the inference worker
+PRESHARED_SECRET=changeme
+
+# Your LLM endpoint, model name and API key
+# Examples:
+#   OpenRouter:  LLM_ENDPOINT=https://openrouter.ai/api/v1/chat/completions
+#   Ollama:      LLM_ENDPOINT=http://host.docker.internal:11434/v1/chat/completions
+LLM_ENDPOINT=https://openrouter.ai/api/v1/chat/completions
+LLM_MODEL=your-model-name
+LLM_API_KEY=your-api-key
+```
+
+All other values (Postgres credentials, ports, etc.) have sensible defaults already set in `.env.example`.
+
+**2. Build and start all services:**
+
+```shell
+docker compose up -d --build
+```
+
+The first build downloads and installs `sentence-transformers` and bakes the embedding model into the image.
+Expect it to take **10–20 minutes** depending on your connection and hardware.
+
+**3. Load the example documents into Postgres (first time only):**
+
+```shell
+docker compose --profile loader run --rm rag-loader
+```
+
+The loader is incremental — re-running it after adding new documents will only process the new files.
+
+**4. Open the web UI:**
+
+Navigate to [http://localhost:8999](http://localhost:8999). Each page load creates a new session.
+You can start asking questions straight away.
+
+### Adding documents
+
+To make Stuart answer questions about your own documents:
+
+**1. Drop your `.txt` or `.md` files into `data_example/`** (or any other `data_*/` directory):
+
+```shell
+cp my-document.md ~/stuart-chatbot/data_example/
+```
+
+> Files in other formats (PDF, DOCX, etc.) must first be converted to Markdown.
+> See [What about documents in other formats?](#what-about-documents-in-other-formats-pdf-docx-etc)
+
+**2. Re-run the loader** — it will only process the new files, skipping ones already in the database:
+
+```shell
+docker compose --profile loader run --rm rag-loader
+```
+
+The running `rag` container picks up the new vectors immediately on the next query — no restart needed.
+
+**To use a completely new directory**, make two small edits:
+
+- Add a volume mount in `docker-compose.yml` under the `rag-loader` service:
+
+```yaml
+volumes:
+  - ./my-docs:/usr/src/app/../my-docs:ro
+```
+
+- Add a `rag_dir` call in `rag/load.py`:
+
+```python
+rag_dir("../my-docs", tag="mydocs", chunk_len=5000, overlap_len=500, hard_limit=6000)
+```
+
+Then re-run the loader as above.
+
+**To delete documents from the database**, connect to Postgres and run a delete query:
+
+```shell
+docker compose exec postgres psql -U rag ragdb
+```
+
+```sql
+delete from ragdata where tag = 'example' and file_name = 'my-document.md';
+delete from ragdata where tag = 'example'; -- delete all chunks with a given tag
+truncate ragdata;                           -- delete everything (!)
+```
+
+### CLI query inside Docker
+
+You can also use Stuart interactively from the command line without leaving Docker:
+
+```shell
+docker compose exec rag python query.py
+```
+
+This drops you into the same interactive loop described in
+[Running the chatbot on the command line](#running-the-chatbot-on-the-command-line),
+using the already-running container with its pre-loaded model and database connection.
 
 ---
 ## Document scrapers (optional)
