@@ -1,6 +1,3 @@
-# CPU-only PyTorch to avoid CUDA dependencies and reduce image size
-torch --index-url https://download.pytorch.org/whl/cpu
-
 psycopg2-binary==2.9.11
 sentence-transformers==2.6.0
 requests==2.32.5
