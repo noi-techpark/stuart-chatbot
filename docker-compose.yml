@@ -1,0 +1,70 @@
+services:
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DBNAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DBNAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: ./web
+      dockerfile: infrastructure/docker/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${SERVER_PORT}:9001"
+    volumes:
+      - stuart-db:/usr/src/app/db/
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  rag:
+    build:
+      context: ./rag
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PG_HOST: postgres
+    command: ["python", "backend_query.py"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      web:
+        condition: service_started
+
+  rag-loader:
+    build:
+      context: ./rag
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      PG_HOST: postgres
+    command: ["python", "load.py"]
+    volumes:
+      - ./data_example:/usr/src/app/../data_example:ro
+      - ./data_ghissues:/usr/src/app/../data_ghissues:ro
+      - ./data_readme:/usr/src/app/../data_readme:ro
+      - ./data_rt:/usr/src/app/../data_rt:ro
+      - ./data_wiki:/usr/src/app/../data_wiki:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - loader
+
+volumes:
+  pgdata:
+  stuart-db:
